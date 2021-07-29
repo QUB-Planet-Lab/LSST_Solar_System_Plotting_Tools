@@ -1,0 +1,12 @@
+numpy
+pandas
+pytest
+pytest-cov
+coveralls
+astropy
+scipy
+sbpy
+seaborn
+plotly
+matplotlib
+psycopg2 
