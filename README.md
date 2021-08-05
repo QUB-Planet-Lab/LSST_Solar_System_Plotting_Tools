@@ -5,5 +5,5 @@
 
 Package for making useful plots from LSST/Rubin Observatory Solar System Data
 
-#Contributors
-Niall McElroy, and Meg Schwamb
+# Contributors
+Niall McElroy and Meg Schwamb
