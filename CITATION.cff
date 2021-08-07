@@ -1,8 +1,10 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "Megan E."
-  given-names: "Schwamb"
+- family-names: "McElroy"
+  given-names: "Niall"
+- family-names: "Schwamb"
+  given-names: "Megan E."
   orcid: "https://orcid.org/0000-0003-4365-1455"
 title: "LSST_Solar_System_Plotting_Tools/"
 version: 2.0.4
