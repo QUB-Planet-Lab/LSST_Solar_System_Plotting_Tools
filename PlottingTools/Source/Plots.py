@@ -11,10 +11,7 @@ import matplotlib.pyplot as plt
 import math as mth
 #from sbpy.data import Orbit as orbit
 from astropy.time import Time
-from astropy.time import TimeMJD
 from astropy import units
-import multiprocessing as mp
-import threading
 import re
 import sys
 import pytest
