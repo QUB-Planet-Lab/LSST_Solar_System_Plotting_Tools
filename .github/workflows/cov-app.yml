@@ -18,7 +18,7 @@ jobs:
     - name: Generate coverage report
       run: |
        pip install coverage
-       coverage run Source/tests.py
+       coverage run PlottingTools/Source/Tests.py
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
       with:
