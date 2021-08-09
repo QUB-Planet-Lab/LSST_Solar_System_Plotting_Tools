@@ -6,7 +6,7 @@
 
 import unittest
 import psycopg2 as pg
-from Functions.Functions import VariableTesting,DateorMJD
+from Functions import VariableTesting,DateorMJD
 from Plots import *
 import pandas as ps
 import numpy as np
