@@ -2,8 +2,10 @@
 # coding: utf-8
 
 # In[19]:
+import os
 
-
+s_path = os.getcwd()
+print(s_path)
 import unittest
 import psycopg2 as pg
 from Functions import VariableTesting,DateorMJD
