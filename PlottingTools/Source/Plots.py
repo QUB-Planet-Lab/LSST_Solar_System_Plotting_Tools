@@ -850,29 +850,29 @@ def iqea_hist_2d_plot(date=None,day=None,month=None,year=None,title='',filename=
 ## date : date on which to run defaults (mjd)
 ## NightBefore : Changes default behaviour from the next night based on user entered date to the night
 ##               before for daily run defaults, 
-def run_plot_defaults(BirdsEye=False,HistogramPlot=False,HexbinPlot = False,date=float(int(Time.now().to_value('mjd'))),NightBefore=False,ShowPlot=False):
-    NEODefaultFrame,ABeltDefaultFrame,MSSODefaultFrame,OSSODefaultFrame =None, None, None, None
-    if NightBefore:
-        date-=1
+# def run_plot_defaults(BirdsEye=False,HistogramPlot=False,HexbinPlot = False,date=float(int(Time.now().to_value('mjd'))),NightBefore=False,ShowPlot=False):
+#     NEODefaultFrame,ABeltDefaultFrame,MSSODefaultFrame,OSSODefaultFrame =None, None, None, None
+#     if NightBefore:
+#         date-=1
     
-    if BirdsEye :
+#     if BirdsEye :
         
-        NEODefaultFrame   = BirdsEyeViewPlotter(0,2,date,title = 'Near Earth Detections',filename='./Defaults/NearEarthDetections-bev',DataFrame = NEODefaultFrame,KeepData=True,ShowPlot=ShowPlot) 
-        MSSODefaultFrame  = BirdsEyeViewPlotter(6,25,date,title = 'Mid Solar System Detections',filename='./Defaults/MidSolarSystemDetections-bev',DataFrame = MSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
-        ABeltDefaultFrame = BirdsEyeViewPlotter(2,6,date,title = 'Asteroid Belt Detections',filename='./Defaults/AsteroidBeltDetections-bev',DataFrame = ABeltDefaultFrame,KeepData=True,ShowPlot=ShowPlot)
-        OSSODefaultFrame  = BirdsEyeViewPlotter(25,100,date,title = 'Outer Solar System Detections',filename='./Defaults/OuterSolarSystemDetections-bev',DataFrame = OSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
+#         NEODefaultFrame   = BirdsEyeViewPlotter(0,2,date,title = 'Near Earth Detections',filename='./Defaults/NearEarthDetections-bev',DataFrame = NEODefaultFrame,KeepData=True,ShowPlot=ShowPlot) 
+#         MSSODefaultFrame  = BirdsEyeViewPlotter(6,25,date,title = 'Mid Solar System Detections',filename='./Defaults/MidSolarSystemDetections-bev',DataFrame = MSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
+#         ABeltDefaultFrame = BirdsEyeViewPlotter(2,6,date,title = 'Asteroid Belt Detections',filename='./Defaults/AsteroidBeltDetections-bev',DataFrame = ABeltDefaultFrame,KeepData=True,ShowPlot=ShowPlot)
+#         OSSODefaultFrame  = BirdsEyeViewPlotter(25,100,date,title = 'Outer Solar System Detections',filename='./Defaults/OuterSolarSystemDetections-bev',DataFrame = OSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
      
-    if HistogramPlot:
-        NEODefaultFrame   = HistogramPlot2D(0,2,date,title = 'Near Earth Detections',filename='./Defaults/NearEarthDetections-2DHist',DataFrame = NEODefaultFrame,KeepData=True,ShowPlot=ShowPlot) 
-        MSSODefaultFrame  = HistogramPlot2D(6,25,date,title = 'Mid Solar System Detections',filename='./Defaults/MidSolarSystemDetections-2DHist',DataFrame = MSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
-        ABeltDefaultFrame = HistogramPlot2D(2,6,date,title = 'Asteroid Belt Detections',filename='./Defaults/AsteroidBeltDetectiom-2DHist',DataFrame = ABeltDefaultFrame,KeepData=True,ShowPlot=ShowPlot)
-        OSSODefaultFrame  = HistogramPlot2D(25,100,date,title = 'Outer Solar System Detections',filename='./Defaults/OuterSolarSystemDetections-2DHist',DataFrame = OSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
+#     if HistogramPlot:
+#         NEODefaultFrame   = HistogramPlot2D(0,2,date,title = 'Near Earth Detections',filename='./Defaults/NearEarthDetections-2DHist',DataFrame = NEODefaultFrame,KeepData=True,ShowPlot=ShowPlot) 
+#         MSSODefaultFrame  = HistogramPlot2D(6,25,date,title = 'Mid Solar System Detections',filename='./Defaults/MidSolarSystemDetections-2DHist',DataFrame = MSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
+#         ABeltDefaultFrame = HistogramPlot2D(2,6,date,title = 'Asteroid Belt Detections',filename='./Defaults/AsteroidBeltDetectiom-2DHist',DataFrame = ABeltDefaultFrame,KeepData=True,ShowPlot=ShowPlot)
+#         OSSODefaultFrame  = HistogramPlot2D(25,100,date,title = 'Outer Solar System Detections',filename='./Defaults/OuterSolarSystemDetections-2DHist',DataFrame = OSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
     
-    if HexbinPlot :
-        NEODefaultFrame   = HexPlot(0,2,date,title = 'Near Earth Detections',filename='./Defaults/NearEarthDetections-hexbin',DataFrame = NEODefaultFrame,KeepData=True,ShowPlot=ShowPlot) 
-        MSSODefaultFrame  = HexPlot(6,25,date,title = 'Mid Solar System Detections',filename='./Defaults/MidSolarSystemDetections-hexbin',DataFrame = MSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
-        ABeltDefaultFrame = HexPlot(2,6,date,title = 'Asteroid Belt Detections',filename='./Defaults/AsteroidBeltDetections-hexbin',DataFrame = ABeltDefaultFrame,KeepData=True,ShowPlot=ShowPlot)
-        OSSODefaultFrame  = HexPlot(25,100,date,title = 'Outer Solar System Detections',filename='./Defaults/OuterSolarSystemDetections-hexbin',DataFrame = OSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)        
+#     if HexbinPlot :
+#         NEODefaultFrame   = HexPlot(0,2,date,title = 'Near Earth Detections',filename='./Defaults/NearEarthDetections-hexbin',DataFrame = NEODefaultFrame,KeepData=True,ShowPlot=ShowPlot) 
+#         MSSODefaultFrame  = HexPlot(6,25,date,title = 'Mid Solar System Detections',filename='./Defaults/MidSolarSystemDetections-hexbin',DataFrame = MSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)
+#         ABeltDefaultFrame = HexPlot(2,6,date,title = 'Asteroid Belt Detections',filename='./Defaults/AsteroidBeltDetections-hexbin',DataFrame = ABeltDefaultFrame,KeepData=True,ShowPlot=ShowPlot)
+#         OSSODefaultFrame  = HexPlot(25,100,date,title = 'Outer Solar System Detections',filename='./Defaults/OuterSolarSystemDetections-hexbin',DataFrame = OSSODefaultFrame,KeepData=True,ShowPlot=ShowPlot)        
               
 #run_plot_defaults(True,True,True,date = 60042,NightBefore=False,ShowPlot=False)
 
