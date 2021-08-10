@@ -6,5 +6,7 @@
 
 Package for making useful visualizations of LSST/Rubin Observatory Solar System Data (currently using a [simulated LSST Solar System Database](https://github.com/lsst-sssc/lsst-simulation/))
 
+This repo is in active development. A tutorial notebook will available at the end of the week. Please add feature requests or report bugs using the Issues tab.
+
 # Contributors
 Niall McElroy and Meg Schwamb
