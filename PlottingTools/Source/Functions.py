@@ -434,6 +434,7 @@ def DateorMJD(Day=None,Month=None,Year=None,MJD=None,ConvertToIso=True):
         if ConvertToIso:
             return Time(str(MJD),format='mjd').to_value('iso')
         else:
+            print(MJD)
             return Time(str(MJD),format='mjd')
 
 # Is used to decide the padding on limits for some of the plots with non user set bounds as such require dynamic padding
