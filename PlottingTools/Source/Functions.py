@@ -485,7 +485,7 @@ def VariableTesting(mindistance,maxdistance,date,day,month,year,title,DateInterv
         title = str(title)
     except Exception as ex:
         # If anything goes round whilst this check and dates calculation is undertake then then the program will execute a system exit.
-        print('Error message: '+ex)
+        print('Error message:',ex)
         return sys.exit()
     #this function then returns the correctly set startdates, endates and (title in string form.)
     return startdate,enddate,title
