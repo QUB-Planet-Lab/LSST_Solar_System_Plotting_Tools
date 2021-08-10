@@ -31,7 +31,7 @@ class TestFunc(unittest.TestCase):
         VariableTesting(0,2,60042,None,None,None,Time.now(),-7)
 
 class Test_Hist(unittest.TestCase):
-    theframe = ps.read_csv(s_path+'/PlottingTools/Source/Cache/iqeaframe-q-5.csv',nrows=100)
+    theframe = ps.read_csv(s_path+'/'+'PlottingTools/Source/Cache/iqeaframe-q-5.csv',nrows=100)
 #     def test_24hist(self):
         
 #         Weekly24hrHist(0,2,60042,ShowPlot=False)
