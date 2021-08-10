@@ -227,11 +227,11 @@ class TestDF(unittest.TestCase):
         Test That when KeepData = True a Database is returned.
         """
         date = 60042
-        #dataframe =ps.read_csv('./Cache/bev_cache',nrows=1000)
+        dataframe =ps.read_csv('./Cache/bev_cache',nrows=1000)
         self.assertIsNotNone(BirdsEyeViewPlotter(0,2,date,filename='test',title = None,KeepData=True,ShowPlot=False,DataFrame=TestDF.dataframe))
-        #self.assertIsNotNone(BirdsEyeViewPlotter(6,25,date,filename='test',title = None,KeepData=True,ShowPlot=False))
-        #self.assertIsNotNone(BirdsEyeViewPlotter(2,6,date,filename='test',title = None,KeepData=True,ShowPlot=False))
-        #self.assertIsNotNone(BirdsEyeViewPlotter(25,100,date,filename='test',title = None,KeepData=True,ShowPlot=False))
+        self.assertIsNotNone(BirdsEyeViewPlotter(6,25,date,filename='test',title = None,KeepData=True,ShowPlot=False))
+        self.assertIsNotNone(BirdsEyeViewPlotter(2,6,date,filename='test',title = None,KeepData=True,ShowPlot=False))
+        self.assertIsNotNone(BirdsEyeViewPlotter(25,100,date,filename='test',title = None,KeepData=True,ShowPlot=False))
     
         
     def test_bev_not_return_df(self):
@@ -239,11 +239,11 @@ class TestDF(unittest.TestCase):
         Test That when KeepData = False a Database is not returned.
         """
         date = 60042
-        #dataframe =ps.read_csv('./Cache/bev_cache',nrows=1000)
+        dataframe =ps.read_csv('./Cache/bev_cache',nrows=1000)
         self.assertIsNone(BirdsEyeViewPlotter(0,2,date,filename='test',title = None,KeepData=False,ShowPlot=False,DataFrame=TestDF.dataframe))
-        #self.assertIsNone(BirdsEyeViewPlotter(6,25,date,filename='test',title = None,KeepData=False,ShowPlot=False))
-        #self.assertIsNone(BirdsEyeViewPlotter(2,6,date,filename='test',title = None,KeepData=False,ShowPlot=False))
-        #self.assertIsNone(BirdsEyeViewPlotter(25,100,date,filename='test',title = None,KeepData=False,ShowPlot=False))
+        self.assertIsNone(BirdsEyeViewPlotter(6,25,date,filename='test',title = None,KeepData=False,ShowPlot=False))
+        self.assertIsNone(BirdsEyeViewPlotter(2,6,date,filename='test',title = None,KeepData=False,ShowPlot=False))
+        self.assertIsNone(BirdsEyeViewPlotter(25,100,date,filename='test',title = None,KeepData=False,ShowPlot=False))
 
 if __name__ == '__main__':        
     unittest.main(argv=['M87'], exit=False)
