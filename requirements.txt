@@ -1,3 +1,4 @@
+pip-tools
 wheel
 numpy
 pandas
