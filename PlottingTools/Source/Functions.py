@@ -429,6 +429,7 @@ def DateorMJD(Day=None,Month=None,Year=None,MJD=None,ConvertToIso=True):
             # as a AstroPy time object.
             return Time.now()
     else:
+        raise ValueError(str(MJD))
         #Here we check if the ConvertToIso is true indicating that the user wants the time in the in iso format, which returns a string
         # of iso format, otherwise the function will return a AstroPy time object in the mjd format.
         if ConvertToIso:
