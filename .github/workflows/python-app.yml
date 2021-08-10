@@ -38,7 +38,7 @@ jobs:
     - name: Test with unittest
       run: |
         pip install coverage
-        coverage run PlottingTools/Source/Tests.py
+        coverage run -m PlottingTools/Source/Tests.py
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
       with:
