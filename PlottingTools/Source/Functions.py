@@ -47,10 +47,11 @@ def check_next(pair):
     return ''
 
 
+
 def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Query=None, a_min=None, a_max=None,
             q_min=None, q_max=None, i_min=None,
             i_max=None, e_min=None, e_max=None):
-    min_max_pair = [[q_min, q_max], [i_min, i_max], [e_min, e_max], [a_min, a_max], [startdate, enddate]]
+    
     params = {"startdate": startdate, "enddate": enddate, "mindistance": mindistance,
               "maxdistance": maxdistance, 'a_min': a_min, 'a_max': a_max, 'q_min': q_min, 'q_max': q_max
         , 'i_min': i_min,
@@ -118,17 +119,18 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
         WHERE (diaSources.midPointTai BETWEEN %(startdate)s AND %(enddate)s)
         """
         df = dal.create_connection_and_queryDB(cmd, params)
-        #df['a'] = df["q"] / (1 - df["e"])
+        
         return df
     elif Query == 7:
+        min_max_pair = [[q_min, q_max], [i_min, i_max], [e_min, e_max], [a_min, a_max], [startdate, enddate]]
         # max_a, min_a, q_min,q_max,i_min, i_max , e_min, e_max
         count=0
-        cmd = """SELECT MPCORB.mpcdesignation, MPCORB.ssobjectid, diaSources.diaSourceid, q,e,incl,mpch, diaSources.midPointTai
+        cmd = """SELECT MPCORB.mpcdesignation, MPCORB.ssobjectid, diaSources.diaSourceid, q,e,q/NULLIF(1-e,0) as a,incl,mpch, diaSources.midPointTai
         FROM MPCORB 
         JOIN diaSources USING (ssobjectid)
         JOIN ssSources USING (diaSourceid)
         """
-        if (any(i is not None for i in [a_min, a_max, q_min, q_max, i_min, i_max, e_min, e_max])):
+        if (any(i is not None for i in [a_min, a_max, q_min, q_max, i_min, i_max, e_min, e_max,startdate, enddate])):
             cmd += """\nWHERE\n"""
         count+=1
         if (q_min is not None and q_max is not None):
@@ -196,24 +198,24 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
                 cmd += check_next(pair)
                 if check != cmd:
                     break
-        if (e_min is not None and e_min >= 1): a_min, a_max = None, None
+       
         count+=1
         if (a_min is not None and a_max is not None):
-            cmd += """\t(q/(1-e) BETWEEN %(a_min)s AND %(a_max)s) """
+            cmd += """\t(q/NULLIF(1-e,0) BETWEEN %(a_min)s AND %(a_max)s) """
             check = cmd
             for pair in min_max_pair[count:]:
                 cmd += check_next(pair)
                 if check != cmd:
                     break
         elif (a_min is not None and a_max is None):
-            cmd += """\t(q/(1-e) > %(a_min)s) """
+            cmd += """\t(q/NULLIF(1-e,0) > %(a_min)s) """
             check = cmd
             for pair in min_max_pair[count:]:
                 cmd += check_next(pair)
                 if check != cmd:
                     break
         elif (a_min is None and a_max is not None):
-            cmd += """\t(q/(1-e) < %(a_max)s) """
+            cmd += """\t(q/NULLIF(1-e,0) < %(a_max)s) """
             check = cmd
             for pair in min_max_pair[count:]:
                 cmd += check_next(pair)
@@ -248,15 +250,16 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
                 cmd += check_next(pair)
                 if check != cmd:
                     break
+        
         df = dal.create_connection_and_queryDB(cmd, params)
-        if e_max is not None and e_max < 1:
-            df['a'] = df['q'] / (1 - df['e'])
+        #if e_max is not None and e_max <= 1:
+        df['a'] = df['q'] / (1 - df['e'])
         return df
     elif Query == 8:
         min_max_pair = [[q_min, q_max], [i_min, i_max], [e_min, e_max], [a_min, a_max]]
         # max_a, min_a, q_min,q_max,i_min, i_max , e_min, e_max
         count=0
-        cmd = """SELECT MPCORB.mpcdesignation, MPCORB.ssobjectid, q,e,incl,mpch
+        cmd = """SELECT MPCORB.mpcdesignation, MPCORB.ssobjectid, q,e,q/NULLIF(1-e,0) as a,incl,mpch
         FROM MPCORB 
         """
         if (any(i is not None for i in [a_min, a_max, q_min, q_max, i_min, i_max, e_min, e_max])):
@@ -314,7 +317,7 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
                 if check != cmd:
                     break
         elif (e_min is not None and e_max is None):
-            cmd += """\t(e > %(e_min)s )"""
+            cmd += """\t(e > %(e_min)s )"""         
             check = cmd
             for pair in min_max_pair[count:]:
                 cmd += check_next(pair)
@@ -327,24 +330,24 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
                 cmd += check_next(pair)
                 if check != cmd:
                     break
-        if (e_min is not None and e_min >= 1): a_min, a_max = None, None
+            
         count+=1
         if (a_min is not None and a_max is not None):
-            cmd += """\t(q/(1-e) BETWEEN %(a_min)s AND %(a_max)s) """
+            cmd += """\t(q/NULLIF(1-e,0) BETWEEN %(a_min)s AND %(a_max)s) """
             check = cmd
             for pair in min_max_pair[count:]:
                 cmd += check_next(pair)
                 if check != cmd:
                     break
         elif (a_min is not None and a_max is None):
-            cmd += """\t(q/(1-e) > %(a_min)s) """
+            cmd += """\t(q/NULLIF(1-e,0) > %(a_min)s) """
             check = cmd
             for pair in min_max_pair[count:]:
                 cmd += check_next(pair)
                 if check != cmd:
                     break
         elif (a_min is None and a_max is not None):
-            cmd += """\t(q/(1-e) < %(a_max)s) """
+            cmd += """\t(q/NULLIF(1-e,0) < %(a_max)s) """
             check = cmd
             for pair in min_max_pair[count:]:
                 cmd += check_next(pair)
@@ -357,9 +360,10 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
         #             cmd+="""\n\tAND diaSources.midPointTai BETWEEN %(startdate)s AND %(enddate)s"""
         #         elif (tp_min  is None and tp_max is not None):
         #             """\n\tAND diaSources.midPointTai BETWEEN %(startdate)s AND %(enddate)s"""
+        
         df = dal.create_connection_and_queryDB(cmd, params)
-        if e_max is not None and e_max < 1:
-            df['a'] = df['q'] / (1 - df['e'])
+        #if e_max is not None and e_max <= 1:
+        #df['a'] = df['q'] / (1 - df['e'])
         return df
     else:
         print('No Query Called')
@@ -368,6 +372,7 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
     df = dal.create_connection_and_queryDB(cmd, params)
 
     return df
+
 
 ## PlotPlanets Function is used to plot relavent planets onto the generated plots
 ## mindistance: Minimum Asteroid Distance from the sun you want in the plot (int) / au
@@ -485,7 +490,7 @@ def VariableTesting(mindistance,maxdistance,date,day,month,year,title,DateInterv
         title = str(title)
     except Exception as ex:
         # If anything goes round whilst this check and dates calculation is undertake then then the program will execute a system exit.
-        print('Error message:',ex)
+        print('Error message: '+ex)
         return sys.exit()
     #this function then returns the correctly set startdates, endates and (title in string form.)
     return startdate,enddate,title
@@ -518,7 +523,7 @@ coloruse = {'g':'#FF00FF','r':'#FF0000','i':'#0077BB','z':'#B22222','y':'#FFA500
 ##          as a string that contains the names of each of the filters you want plotted, for example:
 ##          'grizy', 'y','rgy','zyri' are all valid inputs for filters.
 def BirdsEyeViewPlotter(mindistance,maxdistance,date=None,day=None,month=None,year=None,
-                        title='NaN',filename=None,DateInterval =1,KeepData=False,ShowPlot=True,
+                        title='',filename=None,DateInterval =1,KeepData=False,ShowPlot=True,
                         DataFrame=None,PlotPlanetsOnPlot = True,Filters=None,xyscale=['heliocentricx','heliocentricy','heliocentric'],QueryNum=1):
     #This calls a simple Variable Type testing function that also calculates the start and end dates of the query.
     startdate, enddate, title = VariableTesting(mindistance,maxdistance,date,day,month,year,title,DateInterval)
@@ -629,7 +634,7 @@ def BirdsEyeViewPlotter(mindistance,maxdistance,date=None,day=None,month=None,ye
 ##          'grizy', 'y','rgy','zyri' are all valid inputs for filters.
 
 def HistogramPlot2D(mindistance,maxdistance,date=None,day=None,month=None,year=None,
-                        title='NaN',filename=None,DateInterval =1,KeepData=False,ShowPlot=True,
+                        title='',filename=None,DateInterval =1,KeepData=False,ShowPlot=True,
                         DataFrame=None,PlotPlanetsOnPlot = True,Filters=None,xyscale=['heliocentricx','heliocentricy','heliocentric'],QueryNum=1):
 
     startdate, enddate, title = VariableTesting(mindistance,maxdistance,date,day,month,year,title,DateInterval)
@@ -737,7 +742,7 @@ def HistogramPlot2D(mindistance,maxdistance,date=None,day=None,month=None,year=N
 ##          as a string that contains the names of each of the filters you want plotted, for example:
 ##          'grizy', 'y','rgy','zyri' are all valid inputs for filters.
 def HexPlot(mindistance,maxdistance,date=None,day=None,month=None,year=None,
-            title='NaN',filename=None,DateInterval =1,KeepData=False,ShowPlot=True,
+            title='',filename=None,DateInterval =1,KeepData=False,ShowPlot=True,
             DataFrame=None,GridSize=40,PlotPlanetsOnPlot=True,Filters=None,xyscale=['heliocentricx','heliocentricy','heliocentric'],QueryNum=1):
 
     startdate, enddate, title = VariableTesting(mindistance,maxdistance,date,day,month,year,title,DateInterval)
@@ -815,7 +820,7 @@ def HelioDistHist(date=None,day=None,month=None,year=None,title='',
     startdate, enddate, title = VariableTesting(0,0,date,day,month,year,title,DateInterval)
     dates = np.linspace(0,DateInterval-1,DateInterval)
     counters = np.ndarray((len(dates)*len(DistanceMinMax),3))
-    ticks = np.ndarray.tolist(np.linspace(0,DateInterval,DateInterval+1)-0.5)
+    ticks = np.ndarray.tolist(np.linspace(0,DateInterval,DateInterval+1))
        
 
 
@@ -879,9 +884,9 @@ def HelioDistHist(date=None,day=None,month=None,year=None,title='',
             numberofdistances+=1/len(distances)
         
     
-    ax.set_xticks(ticks)
+    ax.set_xticks(ticks[:DateInterval])
     ProperDateLabels = [DateorMJD(MJD=date,ConvertToIso=False).to_value(format='iso',subfmt='date') for date in dates+startdate]
-    ax.set_xticklabels(ProperDateLabels+[DateorMJD(MJD=enddate,ConvertToIso=False).to_value(format='iso',subfmt='date')],horizontalalignment='left',rotation=-40)
+    ax.set_xticklabels(ProperDateLabels)#[DateorMJD(MJD=enddate,ConvertToIso=False).to_value(format='iso',subfmt='date')],horizontalalignment='left',rotation=-40)
     ax.set(yscale="log")
     if (filename is not None):
         SavePlot(filename, dict(),ShowPlot)
@@ -913,7 +918,6 @@ def MonthlyHelioDistHist(date=None,day=None,month=None,year=None,title='',
             if int(date[1]) <10:
                 date[1] = '0'+date[1]
         enddate =Time('-'.join(date)).to_value('mjd')
-        print(startdate,enddate)
         distances = []
         for MinMax in DistanceMinMax:
             distances+=[[startdate+0.75, enddate+0.75, *MinMax,3]]
@@ -1015,7 +1019,6 @@ def YearlyHelioDistHist(date=None,day=None,month=None,year=None,title='',
         Dates+=[DateorMJD(MJD=startdate,ConvertToIso=False).to_value(format='iso',subfmt='date')]
         date[0] = str(int(date[0])+1)
         enddate =Time('-'.join(date)).to_value('mjd')
-        print(startdate,enddate)
         distances = []
         for MinMax in DistanceMinMax:
             distances+=[[startdate+0.75, enddate+0.75, *MinMax,3]]
@@ -1173,16 +1176,49 @@ def boxwhisker_plot(mindistance,maxdistance,date=None,day=None,month=None,year=N
     for i, col in enumerate(selection):
         sns.color_palette('colorblind')
         if boxOrBoxen == 0:
+            
             ax = sns.boxplot(x=df.sort_values(by='numeric')['filter'],y=df[col], ax=axes.flatten()[i])
             DoubleBox_en_Call(ax,df,i, col,labels,units)
+            ax.xaxis.get_label().set_fontsize(20)
+            ax.yaxis.get_label().set_fontsize(20)
+            ax.set_yticks(ax.get_yticks())
+            ax.set_yticklabels(ax.get_yticklabels(),fontsize=20)
+            ax.set_xticks(ax.get_xticks())
+            ax.set_xticklabels(ax.get_xticklabels(),fontsize=20)
+            ax.tick_params(axis='both', labelsize=20)
+            
         elif boxOrBoxen == 1:
             ax = sns.boxenplot(x=df.sort_values(by='numeric')['filter'],y=df[col], ax=axes.flatten()[i])
             DoubleBox_en_Call(ax,df,i, col,labels,units)
+            ax.xaxis.get_label().set_fontsize(20)
+            ax.yaxis.get_label().set_fontsize(20)
+            ax.set_yticks(ax.get_yticks())
+            ax.set_yticklabels(ax.get_yticklabels(),fontsize=20)
+            ax.set_xticks(ax.get_xticks())
+            ax.set_xticklabels(ax.get_xticklabels(),fontsize=20)
+            ax.tick_params(axis='both', labelsize=20)
+            
         elif boxOrBoxen == 2:
             ax = sns.boxplot(x=df.sort_values(by='numeric')['filter'],y=df[col], ax=axes.flatten()[i])
+            
             DoubleBox_en_Call(ax,df,i, col,labels,units)
+            ax.xaxis.get_label().set_fontsize(20)
+            ax.yaxis.get_label().set_fontsize(20)
+            ax.set_yticks(ax.get_yticks())
+            #ax.set_yticklabels(ax.get_yticklabels(),fontsize=20)
+            ax.set_xticks(ax.get_xticks())
+            ax.set_xticklabels(ax.get_xticklabels(),fontsize=20)
+            ax.tick_params(axis='both', labelsize=20)
             ax = sns.boxenplot(x=df.sort_values(by='numeric')['filter'],y=df[col], ax=axes.flatten()[len(selection)+i])
             DoubleBox_en_Call(ax,df,i, col,labels,units)
+            ax.xaxis.get_label().set_fontsize(20)
+            ax.yaxis.get_label().set_fontsize(20)
+            ax.set_yticks(ax.get_yticks())
+            #ax.set_yticklabels(ax.get_yticklabels(),fontsize=20)
+            ax.set_xticks(ax.get_xticks())
+            ax.set_xticklabels(ax.get_xticklabels(),fontsize=20)
+            ax.tick_params(axis='both', labelsize=20)
+            
     
     plt.suptitle(title+' '+str(DateorMJD(MJD=startdate))+' - '+str(DateorMJD(MJD=float(enddate))),size= 'xx-large',horizontalalignment='center')
     if filename is None:
@@ -1229,11 +1265,15 @@ def violin_plot(mindistance,maxdistance,date=None,day=None,month=None,year=None,
     fig, axes = plt.subplots(1, len(selection),figsize=(10*len(selection),10))
     for i, col in enumerate(selection):
         sns.color_palette('colorblind')
-        ax = sns.violinplot(x=df.sort_values(by='numeric')['filter'],y=df[col],
-                            bw=0.1,
-
-                            ax=axes.flatten()[i])
+        ax = sns.violinplot(x=df.sort_values(by='numeric')['filter'],y=df[col],bw=0.1,ax=axes.flatten()[i])
         DoubleBox_en_Call(ax,df,i, col,labels,units)
+        ax.xaxis.get_label().set_fontsize(20)
+        ax.yaxis.get_label().set_fontsize(20)
+        ax.set_yticks(ax.get_yticks())
+        #ax.set_yticklabels(ax.get_yticklabels(),fontsize=20)
+        ax.set_xticks(ax.get_xticks())
+        ax.set_xticklabels(ax.get_xticklabels(),fontsize=20)
+        ax.tick_params(axis='both', labelsize=20)
     
     plt.suptitle(title)
     plt.tight_layout()
