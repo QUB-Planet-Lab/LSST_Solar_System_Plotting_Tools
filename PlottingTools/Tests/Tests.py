@@ -3,12 +3,12 @@ import sys
 import pathlib
 
 PACKAGE_PARENT = pathlib.Path.cwd().parent
-SCRIPT_DIR = PACKAGE_PARENT / 'PlottingTools/Source'
+SCRIPT_DIR = PACKAGE_PARENT / 'LSST_Solar_System_Plotting_Tools/PlottingTools/Source'
 sys.path.append(str(SCRIPT_DIR))
 print(sys.path)
 import unittest
 import psycopg2 as pg
-#from Functions import VariableTesting,DateorMJD
+from Functions import VariableTesting,DateorMJD
 from Plots import *
 import pandas as ps
 import numpy as np
