@@ -102,12 +102,7 @@ class TestDF(unittest.TestCase):
     dataframe =ps.read_csv(sys.path[0]+'/Cache/bev_cache',nrows=100)
     violin = ps.read_csv(sys.path[0]+'/Cache/violin_cache', nrows=100)
     date = 60042.75
-    def test_check_no_default_exceptions(self):
-        run_plot_defaults(True,True,True,date = 60042,NightBefore=False,ShowPlot=False)
-    
-   
-    
-    
+       
     
     def test_immutabledata_15(self):
         ps.testing.assert_frame_equal(TestDF.CDF2,boxwhisker_plot(0,2,TestDF.date,filename='test',title = None,DataFrame=TestDF.CDF2,KeepData=True,ShowPlot=False,boxOrBoxen=2))
