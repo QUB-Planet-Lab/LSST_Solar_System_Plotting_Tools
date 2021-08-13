@@ -3,9 +3,9 @@ import sys
 import pathlib
 
 PACKAGE_PARENT = pathlib.Path.cwd().parent
-SCRIPT_DIR = PACKAGE_PARENT / 'Source'
+SCRIPT_DIR = PACKAGE_PARENT / 'PlottingTools/Source'
 sys.path.append(str(SCRIPT_DIR))
-
+ValueError(str(sys.path))
 
 import unittest
 import psycopg2 as pg
