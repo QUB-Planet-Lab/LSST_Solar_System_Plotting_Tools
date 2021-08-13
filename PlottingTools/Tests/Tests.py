@@ -21,7 +21,7 @@ class TestFunc(unittest.TestCase):
         VariableTesting(0,2,60042,None,None,None,Time.now(),-7)
 
 class Test_Hist(unittest.TestCase):
-    theframe = ps.read_csv('./Cache/iqeaframe-q-5.csv',nrows=100)
+    theframe = ps.read_csv(sys.path[0]+'/Cache/iqeaframe-q-5.csv',nrows=100)
 
     def test_ieqa2dHist_9(self):
         self.assertIsNone(iqeaHistogramPlot2D(60042,a_min=27,a_max=80,KeepData=False,DataFrame=Test_Hist.theframe,ShowPlot=False,xyscale=['a','incl','inclination-semimajor'],xylabels=['semimajor axis (au)','inclination (degrees)']))
@@ -96,11 +96,11 @@ class Test_Hist(unittest.TestCase):
     
 class TestDF(unittest.TestCase):
 
-    CDF = ps.read_csv('./Cache/CDF.csv',nrows=100)
-    CDF2 = ps.read_csv('./Cache/CDF2.csv',nrows=100)
-    CDF3 = ps.read_csv('./Cache/CDF3.csv',nrows=100)
-    dataframe =ps.read_csv('./Cache/bev_cache',nrows=100)
-    violin = ps.read_csv('./Cache/violin_cache', nrows=100)
+    CDF = ps.read_csv(sys.path[0]+'/Cache/CDF.csv',nrows=100)
+    CDF2 = ps.read_csv(sys.path[0]+'/Cache/CDF2.csv',nrows=100)
+    CDF3 = ps.read_csv(sys.path[0]+'/Cache/CDF3.csv',nrows=100)
+    dataframe =ps.read_csv(sys.path[0]+'/Cache/bev_cache',nrows=100)
+    violin = ps.read_csv(sys.path[0]+'/Cache/violin_cache', nrows=100)
     date = 60042.75
     def test_check_no_default_exceptions(self):
         run_plot_defaults(True,True,True,date = 60042,NightBefore=False,ShowPlot=False)
