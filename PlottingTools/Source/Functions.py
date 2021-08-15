@@ -139,6 +139,8 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
         df['a'] = df["q"] / (1 - df["e"])
         return df
     elif Query == 6:
+        ## Returns all bound detections with a semi major axis between the min and max value distance range, and for a datetime range between the start and end date.
+        ## The interformation returned includes the mpc designation, the object id and detection id aswell as the perihelion, eccentricty, mpch, detection time.
         cmd="""select Query.mpcdesignation, Query.ssobjectid, diaSources.diaSourceid, Query.q,Query.e,Query.incl,Query.mpch, diaSources.midPointTai,a
             from  (
         select MPCORB.mpcdesignation, MPCORB.ssobjectid, q,e,incl,mpch,q/(1-e) as a
@@ -151,23 +153,40 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
         JOIN ssSources USING (diaSourceid)
         WHERE (diaSources.midPointTai BETWEEN %(startdate)s AND %(enddate)s)
         """
+        ## calls the data access function in DataAccessLayer in order to contact the database. 
         df = dal.create_connection_and_queryDB(cmd, params)
-        
+        ## this returns the dataframe that contains the information from the query back to whatever function called the Queries function
         return df
     elif Query == 7:
+        ## min_max_pair contains all the minmax pairs that are used on this queries and this allows each if,elif,elif function to 
+        ## check whether any of the next sets of parameters is not None as this will allow an "AND" statement to be added to the SQL or ommitted if necessary.
         min_max_pair = [[q_min, q_max], [i_min, i_max], [e_min, e_max], [a_min, a_max], [startdate, enddate]]
         # max_a, min_a, q_min,q_max,i_min, i_max , e_min, e_max
+        ## Is used to slice the min_max_pair list when checking if one of the next parameters is constrained by the user.
         count=0
+        ## Query returns in the MPC Designation, the object id, the detection id, the perihelion, semimajor axis, eccentricity, semi major axis which defaults to Null if 
+        ## the eccentricity is 1, the query also returns the inclination, mpc H aswell as the detection time (ie the midpoint of the image esposure.)
         cmd = """SELECT MPCORB.mpcdesignation, MPCORB.ssobjectid, diaSources.diaSourceid, q,e,q/NULLIF(1-e,0) as a,incl,mpch, diaSources.midPointTai
         FROM MPCORB 
         JOIN diaSources USING (ssobjectid)
         JOIN ssSources USING (diaSourceid)
         """
+        ## This if checks if there are any constaints at all.
         if (any(i is not None for i in [a_min, a_max, q_min, q_max, i_min, i_max, e_min, e_max,startdate, enddate])):
             cmd += """\nWHERE\n"""
         count+=1
+        ## count is set to 1 here was you do not need to check the parameter that is initially added.
+        ## This if,elseif and elseif set up allows you to allow for upper, lower or both bounds
+        ## As I was commenting this it occurs it may be usefull to pull each if,elif,elif structure into a method call as that will allow the cut down on code and just use
+        ## a for loop to work through this. 
+        
+        ## So these if,elif,elif statements just check if both the parameters are not None, ie both bounds are there,
+        ## then checks if there is a lower bound on the parameter if both aren't bounded, and then if there is no lower bound, it checks if there is an upperbound. 
         if (q_min is not None and q_max is not None):
+            ## This adds a inclusive upper and lower bound on q
             cmd += """\t(q BETWEEN %(q_min)s AND %(q_max)s)"""
+            #Then we set check equal to the sql command string so that when the check_next function checks the next parameters that if an "AND" is added the check will no longer
+            ## be equal to the cmd and therefore breaks out of the for loop as there is no need to check any more or you would risk multiple "AND" strings being added.
             check=cmd
             for pair in min_max_pair[count:]:
                 cmd += check_next(pair)
