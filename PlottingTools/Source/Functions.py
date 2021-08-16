@@ -321,18 +321,21 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
         return df
     elif Query == 8:
         ## This query is pretty much similar to the previous query except it just has the exclusion of the time bounds which simply means it returns objects rather than detections
-        ##
         min_max_pair = [[q_min, q_max], [i_min, i_max], [e_min, e_max], [a_min, a_max]]
         # max_a, min_a, q_min,q_max,i_min, i_max , e_min, e_max
         count=0
         ## Query returns in the MPC Designation, the object id the perihelion, semimajor axis, eccentricity, semi major axis which defaults to Null if 
-        ## the eccentricity is 1, the query also returns the inclination, mpc H 
+        ## the eccentricity is 1, the query also returns the inclination and mpc H it allows user set constraints on e,a,q and i  
         cmd = """SELECT MPCORB.mpcdesignation, MPCORB.ssobjectid, q,e,q/NULLIF(1-e,0) as a,incl,mpch
         FROM MPCORB 
         """
+        ## Checks that there are actually parameters that are not None in the following list 
         if (any(i is not None for i in [a_min, a_max, q_min, q_max, i_min, i_max, e_min, e_max])):
             cmd += """\nWHERE\n"""
         count+=1
+        ## count is incremented in order to ^ slice the array after the [q_min,q_max] list item within the min_max_pair list
+        ## Once again this checks if q_min and q_max are both Not None to check whether both are bounded so a lower perhelion and higher perihelion value
+        ## if only q_min is set it adds a lower bound and if only q_max is set then it only adds an upper bound for q to the sql statement.
         if (q_min is not None and q_max is not None):
             cmd += """\t(q BETWEEN %(q_min)s AND %(q_max)s)"""
             check=cmd
@@ -354,6 +357,8 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
                 cmd += check_next(pair)
                 if check != cmd:
                     break
+        ## count is incremented so the min_max_pair array is sliced correctly for the for statement when checking with check_next as we don't want to add an "AND" for parameters
+        ## that have already been added to the statement.
         count+=1
         if (i_min is not None and i_max is not None):
             cmd += """\t(incl BETWEEN %(i_min)s AND %(i_max)s)"""
@@ -400,6 +405,8 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
                     break
             
         count+=1
+        ## once again we use the NULLIF(1-e,0) to prevent division by zero when e is equal to 1 as at that point semi major axis tends to infinity. as it will replace the value
+        ## with a SQL null value which also will be excluded with there is a min or max value for a. 
         if (a_min is not None and a_max is not None):
             cmd += """\t(q/NULLIF(1-e,0) BETWEEN %(a_min)s AND %(a_max)s) """
             check = cmd
@@ -428,15 +435,17 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
         #             cmd+="""\n\tAND diaSources.midPointTai BETWEEN %(startdate)s AND %(enddate)s"""
         #         elif (tp_min  is None and tp_max is not None):
         #             """\n\tAND diaSources.midPointTai BETWEEN %(startdate)s AND %(enddate)s"""
-        
+        ## contacts the database with the fully constructed sql command and passes it and the parameters to the database.
         df = dal.create_connection_and_queryDB(cmd, params)
-        #if e_max is not None and e_max <= 1:
-        #df['a'] = df['q'] / (1 - df['e'])
+    
         return df
     else:
+        ## if the query number entered doesn't map to any of the queries then this is printed and a NoneType is returned.
+        ## it may be useful to return an empty dataframe instead to prevent errors from being raised when this happens.
         print('No Query Called')
         return
-
+    ## for the queries that do not immediately call the database the rest get pushed to the database with the parameters now and then return that dataframe to the function calling
+    ## this Query function.
     df = dal.create_connection_and_queryDB(cmd, params)
 
     return df
@@ -527,10 +536,18 @@ def DecideLimits(value):
 ## col: used alongside df in order to set y limits.
 ## i, labels and units : i in an index for the labels and units arrays that are used to set the ylabels for each plot.
 def DoubleBox_en_Call(ax,df,i, col,labels,units):
+    ## sets ymin based on the minimum value in the dataframe column
+    ## sets ymax based on the maximum value in the dataframe column passed to the function,
+    ## DecideLimits is the function that is used to pad the y limits
         ymin = DecideLimits(df[col].min())
+        ## for ymax we use -1* on the max so that when the value is evaluated it flips sign so that the negative and positive values are padded the same way
+        ## and then we flip it back onces it comes out of the function, this allows us to cover eventualities where you have both negative min and max values on the y and 
+        ## handle them in the same way.
         ymax = -1*DecideLimits(-1*df[col].max())
+        ## we then set y limit using these newly padded values and we set the y label using the labels list and units list so ie heliocentric distance and (au)
         ax.set_ylim(ymin, ymax)
         ax.set_ylabel(labels[i]+' '+units[i])
+        ## we then set the xlabel to Filter as in the database it is not capitalized as it should be. 
         ax.set_xlabel('Filter')        
 
         
