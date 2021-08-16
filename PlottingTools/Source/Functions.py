@@ -188,6 +188,8 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
             #Then we set check equal to the sql command string so that when the check_next function checks the next parameters that if an "AND" is added the check will no longer
             ## be equal to the cmd and therefore breaks out of the for loop as there is no need to check any more or you would risk multiple "AND" strings being added.
             check=cmd
+            ## the min_max_pair that is the list of lists so [[0,0],[0,0]] etc is sliced using count to not check the current or past variables. 
+            ## this for loop splits the list of lists into their pairs so [a_min,a_max] would be a possible pair.
             for pair in min_max_pair[count:]:
                 cmd += check_next(pair)
                 if check != cmd:
@@ -206,6 +208,8 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
                 cmd += check_next(pair)
                 if check != cmd:
                     break
+        ## count is incremented by one in order to move the slice of min_max_pair for further checks using the check_next function
+        ## The rest of these IF-ELIF-ELIF groups follow the same pattern so possibility of refactoring into a method in future to improve readability.
         count+=1
         if (i_min is not None and i_max is not None):
             cmd += """\t(incl BETWEEN %(i_min)s AND %(i_max)s)"""
@@ -250,8 +254,11 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
                 cmd += check_next(pair)
                 if check != cmd:
                     break
-       
+        ## count incremented again to move the slice further down the list.
         count+=1
+        ## This is similar to the other IF-ELIF-ELIF in having the same structure however the addition to the cmd is slightly different
+        ## in there is q/NULLIF(1-e,0) which is used to deal with a division by zero error and if e=1 ie the semi major axis is at infinity, so we use the null indicator to filter
+        ## that out.
         if (a_min is not None and a_max is not None):
             cmd += """\t(q/NULLIF(1-e,0) BETWEEN %(a_min)s AND %(a_max)s) """
             check = cmd
@@ -280,6 +287,9 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
         #             cmd+="""\n\tAND diaSources.midPointTai BETWEEN %(startdate)s AND %(enddate)s"""
         #         elif (tp_min  is None and tp_max is not None):
         #             """\n\tAND diaSources.midPointTai BETWEEN %(startdate)s AND %(enddate)s"""
+        ## This here is used to add the date constraints in the same way with checking if startdate and enddate are not None so both are bounded, if only startdate is set 
+        ## so only a lower bound or only enddate is Not None so an upperbound.
+        ## The interation to check next parameters works through min_max being sliced at the end, therefore there are no 'pair' in it so no "AND" statement is appended.
         if (startdate is not None and enddate is not None):
             cmd += """\tdiaSources.midPointTai BETWEEN %(startdate)s AND %(enddate)s"""
             check = cmd
@@ -302,15 +312,21 @@ def Queries(startdate=None, enddate=None, mindistance=None, maxdistance=None, Qu
                 cmd += check_next(pair)
                 if check != cmd:
                     break
-        
+        ## This contacts the DataAccessLayer File by calling a function that initiates connection to the database, and then the parameters and the sql statement are handed to the
+        ## database, and by using postgresql the parameters will be considered as variables only and will not accidentially be executed as SQL code,
         df = dal.create_connection_and_queryDB(cmd, params)
-        #if e_max is not None and e_max <= 1:
-        df['a'] = df['q'] / (1 - df['e'])
+        
+        ## No need for this as we handled adding the a table on the database side and handle any division by zero errors there too. 
+        #df['a'] = df['q'] / (1 - df['e'])
         return df
     elif Query == 8:
+        ## This query is pretty much similar to the previous query except it just has the exclusion of the time bounds which simply means it returns objects rather than detections
+        ##
         min_max_pair = [[q_min, q_max], [i_min, i_max], [e_min, e_max], [a_min, a_max]]
         # max_a, min_a, q_min,q_max,i_min, i_max , e_min, e_max
         count=0
+        ## Query returns in the MPC Designation, the object id the perihelion, semimajor axis, eccentricity, semi major axis which defaults to Null if 
+        ## the eccentricity is 1, the query also returns the inclination, mpc H 
         cmd = """SELECT MPCORB.mpcdesignation, MPCORB.ssobjectid, q,e,q/NULLIF(1-e,0) as a,incl,mpch
         FROM MPCORB 
         """
