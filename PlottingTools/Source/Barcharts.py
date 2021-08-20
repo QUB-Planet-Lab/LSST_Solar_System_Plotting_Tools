@@ -119,7 +119,7 @@ def HelioDistHist(date=None,day=None,month=None,year=None,title='',
     xvalcount = 0
     # here we enumerate through the patches on the the axis,
     for i,patch in enumerate(ax.patches):
-        we set the width of the bars to take an equal area each whilst filling their area, but typically due to their changing size they need shifted
+       # we set the width of the bars to take an equal area each whilst filling their area, but typically due to their changing size they need shifted
         patch.set_width(1/len(distances))
         # xval is set to the negative -0.5 offset we put on patches such as rectangles on the barchart
         # we then add +1 to xval each iteration so the bars do not overlap for each distance.
