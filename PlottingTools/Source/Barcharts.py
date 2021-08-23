@@ -155,21 +155,54 @@ def HelioDistHist(date=None,day=None,month=None,year=None,title='',
     if (KeepData == True):
         return NewData        
 
-        
+## MonthlyHelioDistHist: This is a set of bar charts for a user set distance range of heliocentric distances with data for every day within the user set date range. 
+
+## date: the date you want to query around (in median julian date) (defaults to current date.) (float)
+## day   In regards to date, it will revert to the 24 hour window it is contained with
+## month So 2023-08-04 [YYYY-MM-DD] would be the plot starting at 18:00 UTC (08-04) and end at 18:00 UTC (09-04)      
+## year  and you can enter these as simply, days, months and year in UTC scale.   
+## title: The Title you want the plot to have (str)
+## filename : File name is used to ask the user to explicitly specify the filename 
+## DateInterval: DateInterval works slightly differently here, the query automatically defaults to the first of a month and the date interval in this case refers to the number of 
+##               months that should be shown.
+## KeepData: Used to keep query data in DataFrame Object that is returned from the function as this allows a reduction of
+##           Queries to the database. (boolean)
+## Showplot: This dictates whether the plot is closed or not after running the function, this is here to manage command
+##           line behaviour where open plot figures can cause issues with preventing code from continuing to run. whilst
+##           allowing this to be set to false so that figures are shown in Notebook form.
+## DistanceMinMax: Is a list of lists and is a variable that takes in the user defined distance ranges.so each list item is a list that contains an upper and lower bound 
+##                 for example [0,2] is a value list item and if the user only wants one distance range then the parameter input would be [[0,2]], usually in python it can be discouraged
+##                 to use lists in input, however at no point does these lists or any other get appended or mutated and are not subject to problems with input parameter mutation
+##                 As such if DistanceMinMax were changed to say append [5,10] internally within the function the next time that function is called then the default would be mutated.
+## LogY: LogY is a boolean variable that designates whether the user wants the number of detections in a Logarithmic scale, this can be useful to turn off for small numbers of 
+##        objects.        
 def MonthlyHelioDistHist(date=None,day=None,month=None,year=None,title='', 
                          filename=None,DateInterval = 8 ,KeepData=False,ShowPlot=True,
                          DistanceMinMax=[[0,2],[2,6],[6,25],[25,100]],LogY=True):
+    #Here we set out a list of our months that we will use to index when setting the plot labels later
     Months = ['January','February','March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    # So we then get then parse the date and return it as a list so we have day,month,year components if given in MJD
     date = DateorMJD(MJD=date,Day=day,Month=month,Year=year,ConvertToIso=False).to_value(format='iso',subfmt='date').split('-')
+    #We then set the day of the month to the first.
     date[-1] = '01'
+    #As we did in the previous function we set up the counters array which will hold our counted results with it being set size wise as number of Months *number of Distances ranges
+    # as we need to take both in account to have the right length. 
     counters = np.ndarray((DateInterval*len(DistanceMinMax),3))
+    #we set up the ticks list that is equally spread out between 0 and number of months -1, this will then allow us to set the ticks to center and then change the tick labels at the
+    # same time.
     ticks = np.ndarray.tolist(np.linspace(0,DateInterval-1,DateInterval))
     count=0
+    #We initialize an empy Dates list
     Dates = []
+    #We start a for loop and run it the sane number of times as the date interval as we need to do this once for every date.
     for i in range(0,DateInterval):
-
+        #We firstly convert the date to mjd.
         startdate =Time('-'.join(date)).to_value('mjd')
+        #we then add this date to the Dates List so we have it collected for when we convert to Months in words when we need to add labels for months later.
         Dates+=[DateorMJD(MJD=startdate,ConvertToIso=False).to_value(format='iso',subfmt='date')]
+        #Here we check if the Month is the 12th ie december and if it is then we roll it over to a new year and set the month to 1
+        # otherwise we just add one to the months
+        # it is useful to note that if the month is less than 10 then we prepend a zero to keep in line with the expected iso date formate for day,month and year.
         if int(date[1]) ==12:
             date[0] = str(int(date[0])+1); 
             date[1] = '01'
@@ -177,67 +210,106 @@ def MonthlyHelioDistHist(date=None,day=None,month=None,year=None,title='',
             date[1] = str(int(date[1])+1)
             if int(date[1]) <10:
                 date[1] = '0'+date[1]
+        # We then use the new date to calculate the end date having incremented the month by 1 so we now have the start date say 1st January and end date, say 1st February 
         enddate =Time('-'.join(date)).to_value('mjd')
+        # Now we then need to create the distances list which will be a list of lists containing all the information for each query for that month for each distance range.
+        # MinMax is the heliocentric lower and upper bound values for each distance range within the DistanceMinMax List of lists.
         distances = []
         for MinMax in DistanceMinMax:
             distances+=[[startdate+0.75, enddate+0.75, *MinMax,3]]
-
+        # Once we have built the distances list we then iterate through it in a for loop to query the database and save the query results and identifying information in the counters
+        # array. We then increase the count by one as it keeps track on where we are in the overall progress, ie count goes from 0 to (DateInterval*Number of Distance Ranges)-1 and
+        # is used to index the counters array to prevent overwritting, we avoid using a pandas dataframe and appending as it is quite a slow operation in pandas.
         for j in range(len(distances)):
+          #Here we use the Queries function to deal with the query and calling the database to handle the Query.
             df = Queries(*distances[j])
+            # Number of objects is saved in counters, alongside the start date and j which will tell the distance it relates to as j goes from 0,1,2 if there are 3 distance ranges etc.
             counters[count,:] = [startdate,df['count'].values[0],j]
             count += 1
     #Dates+=[DateorMJD(MJD=enddate,ConvertToIso=False).to_value(format='iso',subfmt='date')]
+    # Here we replace the start dates with the month in words and the year so the data is labelled easily
     Dates = [Months[int(date.split('-')[1])-1] + ', '+date.split('-')[0] for date in Dates]
+    # We then create a dataframe from the counters array using our set column titles so we know their keys.
     NewData =  ps.DataFrame(data=counters, columns=['Date','Detections','distance'])
+    # We then do the // and % checks to roll over to a next row when there are more than 6 months of data and check the remainder to ensure that all data is plotted in the correct
+    # way.
     rows = (DateInterval // 6)
     if DateInterval % 6 !=0 :
         rows+=1
+    # We then set the size of the figure based on number of rows to maintain a nice aspect for the user 
     fig,axes = plt.subplots(rows,1,figsize=(18,4*rows))
+    # If the number of rows is greater than one then we need to plot on a number of difference axes so we then use a while looped that checks the condition at the start 
+    
     if rows>1:
         i=0
         count=DateInterval
+        # as we use i as initially being equal to 0 then we can use it to index to the correct axis aswell as using less than operator to exit at the correct point. 
         while i<rows:
-
+            #on the axes we plot a barplot by using the pandas dataframe we made earlier, however we need to slice it so that we only plot the correct data for this axis
+            # ie the first 6 months and ensure that the 7th month isn't accidentially plotted instead, so how do we slice it correctly? well for the first row i =0 so it indexes from
+            # 0 to 6(width of each row)* length of DistanceMinMax which is the number of distance ranges, this works as the upper slice is not inclusive so we only plot the correct data.
             ax =sns.barplot(data=NewData[i*6*len(DistanceMinMax):(i+1)*6*len(DistanceMinMax)],x='Date',y='Detections',hue='distance',ax=axes.flatten()[i])
             ticks = np.ndarray.tolist(np.linspace(0,DateInterval-1,DateInterval))
+            #so for when i is not zero we might find where we may not fill the row but we have ticks for the whole row in order to preserve the aspect ration so we then need to add
+            # list elements to bring them to the same length so we just pad dates with empty string list elements.
             while len(Dates[i*6:]) < len(ticks):
                 Dates+=['']
-
+            # this works similarly to in the previous function where we make the width of each bar be the full width of what it could be instead of being 0.8 of the available area
+            # we then recenter the rectanges which are patches on the graph so that they do not overlap.
             xval = -0.5
             numberofdistances=0
             xvalcount = 0
+            # So here what we do is we iterate through each patch and we make it the right width and put it in the right position with set_width and set_x, we do this for each distance
+            # range one at a time as each distance ranges needs a offset added so that they do not overlap with eachother. 
             for g,patch in enumerate(ax.patches):
                 patch.set_width(1/len(distances))
                 patch.set_x(xval+numberofdistances)
                 xval+=1
+                #We add a vertical line to make it east to distinguish between months, we set this only by xval as we only need it per month, not per distance range.
                 ax.axvline(xval,color='black')
                 xvalcount+=1
+                #We then set a limit based on the number of Months of data there is and reset and increment the number of distances so we can address each distance range.
                 limit = len(NewData[i*6*len(DistanceMinMax):(i+1)*6*len(DistanceMinMax)])/len(NewData['distance'].unique())
                 if xvalcount== limit :
                     xvalcount=0
                     xval=-0.5
                     numberofdistances+=1/len(distances)
+             
             ticks = np.ndarray.tolist(np.linspace(0,DateInterval,DateInterval+1))
+            # We then set the ticks and Monthly in words with year date labels in this two following lines, we set the fontsize at 20 to make it nice and noticable on the large plot
             ax.set_xticks(ticks[0:6])
             ax.set_xticklabels(Dates[i*6:(i+1)*6],fontsize=20)
+            # We then build a legend labels based on the upper and lower bound of the heliocentric distance using a list comprehension
             legend = [str(distance[2])+'-'+str(distance[3])+' (au)' for i,distance in enumerate(distances)]
+            # and we then apply this legend labels using the same handles already made as we have a partial legend from 'hue' has we had distances 0,1,2 etc and we replace that with their
+            # actual values now. we also move the legend box off the plot to prevent it from blocking data points etc.
             ax.legend(handles=ax.legend_.legendHandles, labels=legend,loc='upper left', bbox_to_anchor=(1,1), borderpad = 2,)
+            # We make the labels large for easy viewing 
             ax.xaxis.get_label().set_fontsize(20)
             ax.yaxis.get_label().set_fontsize(20)
+            # we do the same for tick params also to ensure nothing is left showing small on the plot or saved image.
             ax.tick_params(axis='both', labelsize=20)
             ax.set_yticks(ax.get_yticks())
             ax.set_yticklabels(ax.get_yticklabels(),fontsize=20)
+            # We use tight_layout() as it prevents the plots from overlapping the labels as this can happen if not explicitly preventeded.
             plt.tight_layout()
+            # We then check if i is not equal to one and remove the legend on that axis as it is useless to have it for the second and third row as it is already there.
             if i!=0: ax.get_legend().remove()
+            # Here we check if the user wants the plot in Logarithmic form on the y as this is idealy the most useful representation for a monthly object detection plot.
             if LogY:
                 ax.set(yscale="log")
+            #We then increment i by one and move to the next step of the loop or exit based on the i< rows condition.
             i+=1
     else:
+      #This is where there is only a single row so 6 or less months, we can plot using all the data
         ax = sns.barplot(data=NewData,x='Date',y='Detections',hue='distance')
+        #we then set the ticks and dates, and we don't have to pad it in this as we only have a single row.
         ax.set_xticks(ticks)
         ax.set_xticklabels(Dates[0:7])
+        #We then check whether the axes need to be log based on the user input
         if LogY:
             ax.set(yscale="log")
+            #we then undertake the same repositioning of the rectangle patches on the bar chart as shown just before the else statement. 
         xval = -0.5
         numberofdistances=0
         xvalcount = 0
