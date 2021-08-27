@@ -327,53 +327,96 @@ def MonthlyHelioDistHist(date=None,day=None,month=None,year=None,title='',
                     xval=-0.5
                     numberofdistances+=1/len(distances)
 
+## YearlyHelioDistHist: This is a set of bar charts for a user set distance range of heliocentric distances with data for each year within the user set date range. 
+
+## date: the date you want to query around (in median julian date) (defaults to current date.) (float)
+## day   In regards to date, it will revert to the 24 hour window it is contained with
+## month So 2023-08-04 [YYYY-MM-DD] would be the plot starting at 18:00 UTC (08-04) and end at 18:00 UTC (09-04)      
+## year  and you can enter these as simply, days, months and year in UTC scale.   
+## title: The Title you want the plot to have (str)
+## filename : File name is used to ask the user to explicitly specify the filename 
+## DateInterval: This is how long you want to query about the date set above, as this is the yearly function the date interval increments in years instead of days and months like the previous
+##               functions.
+## KeepData: Used to keep query data in DataFrame Object that is returned from the function as this allows a reduction of
+##           Queries to the database. (boolean)
+## Showplot: This dictates whether the plot is closed or not after running the function, this is here to manage command
+##           line behaviour where open plot figures can cause issues with preventing code from continuing to run. whilst
+##           allowing this to be set to false so that figures are shown in Notebook form.
+## DistanceMinMax: Is a list of lists and is a variable that takes in the user defined distance ranges.so each list item is a list that contains an upper and lower bound 
+##                 for example [0,2] is a value list item and if the user only wants one distance range then the parameter input would be [[0,2]], usually in python it can be discouraged
+##                 to use lists in input, however at no point does these lists or any other get appended or mutated and are not subject to problems with input parameter mutation
+##                 As such if DistanceMinMax were changed to say append [5,10] internally within the function the next time that function is called then the default would be mutated.
+## LogY: LogY is a boolean variable that designates whether the user wants the number of detections in a Logarithmic scale, this can be useful to turn off for small numbers of 
+##        objects.
         
 def YearlyHelioDistHist(date=None,day=None,month=None,year=None,title='', 
                          filename=None,DateInterval = 8 ,KeepData=False,ShowPlot=True,
                          DistanceMinMax=[[0,2],[2,6],[6,25],[25,100]],LogY=True):
-
+    # We convert either the MJD or Day,Month,Year to an MJD value
     date = DateorMJD(MJD=date,Day=day,Month=month,Year=year,ConvertToIso=False).to_value(format='iso',subfmt='date').split('-')
 
-
+    ## We set up the counters to be 3 columns with length being the product of the date interval ie number of years and the length of DistanceMinMax which gives the number of distance
+    ## ranges so we have space for each result in the array
     counters = np.ndarray((DateInterval*len(DistanceMinMax),3))
-
+    ## Like in the previous functions we set up an array which will be used to specifically place the ticks onto the plot later.
     ticks = np.ndarray.tolist(np.linspace(0,DateInterval-1,DateInterval))
     count=0
+    #We create an empty Dates list. this will be used to build an list of labels for the plot later on in the function
     Dates = []
+    ## So we iterate for each year, in this loop, it works by iterating for a each, building the query for each distance range and then querying the database for each distance range
+    ## we then add that to a row of a numpy array and then iterate through the next year.
     for i in range(0,DateInterval):
-
+        # We calculate the start date from the date and put it in modified julian date.
         startdate =Time('-'.join(date)).to_value('mjd')
+        #We then append this start date to the Dates list and this will be used for the labels on the plots.
         Dates+=[DateorMJD(MJD=startdate,ConvertToIso=False).to_value(format='iso',subfmt='date')]
+        # we then increment the modified julian date by 1 as that corresponds to the next year, we then once again use the date to create the enddate aswell now that it represents the next year.
+        
         date[0] = str(int(date[0])+1)
         enddate =Time('-'.join(date)).to_value('mjd')
+        # we then create an empty distances array and we will use the distance array for the arguments that go to the query in the next for loop.
         distances = []
+        # this for loop is used. to generate the distance array from the DistanceMinMax list of lists where the MinMax is a List item containing the lower and upper bound of the user set
+        # distance range. the +0.75 on the start date and end date bring the time to 18:00 utc so that queries catch an entire nights worth of data. this is less of an issue for yearly
+        # queries but for the sake of accuracy is included to be consistent with the other functions.
         for MinMax in DistanceMinMax:
             distances+=[[startdate+0.75, enddate+0.75, *MinMax,3]]
-
+        # we iterate through each list item in the distance array and query the database using them and then add the results to the counters array with the first column being
+        # the startdate, the 'count' of the number of objects being the second and the third being j which is used to differentiate between the different distances.
         for j in range(len(distances)):
             df = Queries(*distances[j])
             counters[count,:] = [startdate,df['count'].values[0],j]
             count += 1
     
-    
+    # Here we strip off the day and month from the date in iso form so that we are only left with the year of the data, the data starts of the 1st of January of each year.
     Dates = [ '-'.join(date.split('-')[0:1]) for date in Dates]
+    # We then generate a dataframe the the counters numpy array and set the column names to Date,Detections and Distance as these are keys we know.
     NewData =  ps.DataFrame(data=counters, columns=['Date','Detections','distance'])
+    
     ticks = np.ndarray.tolist(np.linspace(0,DateInterval-1,DateInterval))
+    # Now we need to calculate such that there are only 4 years per row, and if it is greater than that then roll over to the next row, we do that using // and % as that tells us how many
+    ## times it gos through 4 and then the remainer.
     rows = (DateInterval // 4)
     if DateInterval % 4 !=0 :
         rows+=1
-    
+    # We set up our sub plots and we set the figsize to the correct aspect ratio. with one plot per row and the number of rows is set to rows
     fig,axes = plt.subplots(rows,1,figsize=(12,4*rows))
+    # If the number of rows is >1 then we need to slice the data to only plot the correct data on each row.
     if rows>1:
         i=0
         count=DateInterval
         while i<rows:
+          # We put the plot on the correct axis using i. we slice the data using i*4*(number of distance ranges):(i+1)*4*(number of distance ranges) this allows use to split the data
+          # for each row and only plot the correct data. 
             ax =sns.barplot(data=NewData[i*4*len(DistanceMinMax):(i+1)*4*len(DistanceMinMax)],x='Date',y='Detections',hue='distance',ax=axes.flatten()[i])
             ticks = np.ndarray.tolist(np.linspace(0,DateInterval-1,DateInterval))
-            print(len(ticks),ticks,len(Dates),Dates)
+            #print(len(ticks),ticks,len(Dates),Dates)
+            # for the second row we need to pad the Dates Array so that the number of ticks and the number of labels are not different to prevent errors so we just add an empty string.
+            # until they are of equal length.
             while len(Dates[i*4:]) < len(ticks):
                 Dates+=['']
-
+            
+            # 
             xval = -0.5
             numberofdistances=0
             xvalcount = 0
