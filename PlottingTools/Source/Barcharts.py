@@ -416,15 +416,24 @@ def YearlyHelioDistHist(date=None,day=None,month=None,year=None,title='',
             while len(Dates[i*4:]) < len(ticks):
                 Dates+=['']
             
-            # 
+            # once again these 3 variables help to resize and recenter the bars that are plotted onto the plot axes as rectangles, we start with xval at -0.5 as that is where the
+            # first bar needs to be centered whilst the number of distances refers to the number of MinMax pairs, the xval count is then used to count through the years
             xval = -0.5
             numberofdistances=0
             xvalcount = 0
+            # we iterate through each patch on the axis that this contains each one of the objects plotted on the figure.
+            # xval effectively operates like the ticks and is incremented by one for each bar on the graph for a single distance.
+            # so this iterates through, does one distance and sets the width and the x value and then it moves onto the next distance by reseting the values 
             for g,patch in enumerate(ax.patches):
-                if i == 2:
-                    print(patch)
+                #if i == 2:
+                #    print(patch)
+                # set the width of the patch to 1/ the number of distances such that each takes up an equal area of the figure.
                 patch.set_width(1/len(distances))
+                # we set the x value of the rectangular patch using xval which relates to which year we are talking about and then with the offset from the number of distances
+                # ie for 4 different distance ranges you would get your 4 different offsets so that they do not overlap.
                 patch.set_x(xval+numberofdistances)
+                # we then increment the xval by one for the next year, add a vertical line to deliniate between lines and then check if the xvaluecount after being incremented
+                # by 1 has hit the limit of the number of years to see if we need to reset the variables and move onto the next distance range.
                 xval+=1
                 ax.axvline(xval,color='black')
                 xvalcount+=1
@@ -433,20 +442,31 @@ def YearlyHelioDistHist(date=None,day=None,month=None,year=None,title='',
                     xvalcount=0
                     xval=-0.5
                     numberofdistances+=1/len(distances)
+            # This ensures we have the correct ticks for the labels on the plot with the ticks going from 0 to the number of years so for 4 years, we have ticks of 0,1,2,3,4
             ticks = np.ndarray.tolist(np.linspace(0,DateInterval,DateInterval+1))
+            #we then set the x ticks
             ax.set_xticks(ticks[0:4])
+            # we then use the Dates list that was constructed earlier to use slice the Date array based on the row that is being plotted at that time, with this Date being the Year.
             ax.set_xticklabels(Dates[i*4:(i+1)*4],fontsize=20)
-            legend = [str(distance[2])+'-'+str(distance[3])+' (au)' for i,distance in enumerate(distances)]
+            # The legend is then constructed with formatting and rounding done in order to ensure no visual errors on the plot that can be caused by generating MinMax pairs from
+            # np.linspace and usage of floating point numbers
+            legend = ["{:.2f}".format(round(distance[2],2))+'-'+"{:.2f}".format(round(distance[3],2))+' (au)' for i,distance in enumerate(distances)]
+            # this legend text is then added to the figure
             ax.legend(handles=ax.legend_.legendHandles, labels=legend,loc='upper left', bbox_to_anchor=(1,1), borderpad = 2,)
+            # This here is just resizing the text labels to make them easy to read.
             ax.xaxis.get_label().set_fontsize(20)
             ax.yaxis.get_label().set_fontsize(20)
             ax.tick_params(axis='both', labelsize=20)
             ax.set_yticks(ax.get_yticks())
             ax.set_yticklabels(ax.get_yticklabels(),fontsize=20)
+            # This prevents the overlap of text and the axis plots
             plt.tight_layout()
+            # Here we remove the extra legends that get duplicated with the same content multiple times.
             if i!=0: ax.get_legend().remove()
+            # And if the user sets so the y scale of the plot is set to logarithmic
             if LogY:
                 ax.set(yscale="log")
+            # i is iterated to move onto the next row of the figure.
             i+=1
     else:
         legend = ["{:.2f}".format(round(distance[2],2))+'-'+"{:.2f}".format(round(distance[3],2))+' (au)' for i,distance in enumerate(distances)]
