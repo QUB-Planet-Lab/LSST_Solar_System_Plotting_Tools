@@ -469,22 +469,36 @@ def YearlyHelioDistHist(date=None,day=None,month=None,year=None,title='',
             # i is iterated to move onto the next row of the figure.
             i+=1
     else:
+      # if there is only a single row then there is no need for a loop
+      # we then format the legend to 2 decimal places using the following code, whilst ensuring we use the rounding function to ensure we only have 2 digits
+      # after the decimal place, this legend gives the heliocentric range of each bar within the plot in au.
         legend = ["{:.2f}".format(round(distance[2],2))+'-'+"{:.2f}".format(round(distance[3],2))+' (au)' for i,distance in enumerate(distances)]
+        # We use the NewData DataFrame which contains the paticular Date and Detections data alongside the distance which signals which range the data belongs to.
         ax =sns.barplot(x=NewData['Date'],y=NewData['Detections'],hue=NewData['distance'],)
+        # We then set the ticks on the graph, the year the data corresponds to and we then apply the legend list we prepared a few lines up to the plot.
         ax.set_xticks(ticks)
         ax.set_xticklabels(Dates)
         ax.legend(handles=ax.legend_.legendHandles, labels=legend,loc='upper left', bbox_to_anchor=(1,1), borderpad = 2,)
+        # If the user has set LogY to true, then the y axis will be set to a logarithmic scale.
         if LogY:
             ax.set(yscale="log")
+        # As we do in other areas we then deal with the positioning and size of the rectangles (bars) on the plot by setting up the following variables
         xval = -0.5
         numberofdistances=0
         xvalcount = 0
+        # We then iterate through each patch on the plot which are the rectangles which make up the bars on the barchart.
         for i,patch in enumerate(ax.patches):
-
+            # The width of the rectangles is set to the inverse of the number of distances as the user could define 2, or 5 and they would both need to flushly fill that dates
+            # area on the plot. 
             patch.set_width(1/len(distances))
+            # the position is set using the xval to situation the rectangle on the plot using the year and the + number of distances refers to how many of the distances have already
+            # been corrected for.
             patch.set_x(xval+numberofdistances)
             xval+=1
+            # A vertical line is added to the plot to clearly differentiate between each year on the plot.
             plt.axvline(xval,color='black')
+            # once this is done we increment xvalcount by 1 and check whether it has reached the end of the dates, and if it has we reset the xvalcount and xvalcounts to their
+            # original values and increment number of distances by the offset that is equal to the width of each bar so they do not overlap.
             xvalcount+=1
             if xvalcount==len(NewData)/len(NewData['distance'].unique()):
                 xvalcount=0
@@ -493,34 +507,65 @@ def YearlyHelioDistHist(date=None,day=None,month=None,year=None,title='',
 
                 
                 
-                
+## Weekly24hrHist : This function allows the query and plotting of daily object detection for a week (by default) for a user set heliocentric range
+## mindistance: Minimum Asteroid Distance from the sun you want in the plot (int) / au
+## maxdistance: Maximum Asteroid Distance from the sun you want in the plot (int) / au
+## date: the date you want to query around (in median julian date) (defaults to current date.) (float)
+## day   In regards to date, it will revert to the 24 hour window it is contained with
+## month So 2023-08-04 [YYYY-MM-DD] would be the plot starting at 18:00 UTC (08-04) and end at 18:00 UTC (09-04)      
+## year  and you can enter these as simply, days, months and year in UTC scale.   
+## title: The Title you want the plot to have (str)
+## filename : File name is used to ask the user to explicitly specify the filename 
+## DateInterval: DateInterval works slightly differently here, the query automatically defaults to the first of a month and the date interval in this case refers to the number of 
+##               months that should be shown.
+## Showplot: This dictates whether the plot is closed or not after running the function, this is here to manage command
+##           line behaviour where open plot figures can cause issues with preventing code from continuing to run. whilst
+##           allowing this to be set to false so that figures are shown in Notebook form.
 def Weekly24hrHist(mindistance,maxdistance,date=None,day=None,month=None,year=None,
                         title='', filename=None,DateInterval = 7,ShowPlot=True):
+  # Variable testing is called as it allows some type testing to be done and allows the start and end dates to be calculated whether the dateinterval is negative or postive
     startdate, enddate, title = VariableTesting(mindistance,maxdistance,date,day,month,year,title,DateInterval)
      
+      #We then set up the dates array which is equally spaced going from 0 to DateInterval -1, ie zero indexed so DateInterval of 7 would be [0,1,2,3,4,5,6] 
     dates = np.linspace(0,DateInterval-1,DateInterval)
+    # we also need to ensure that the ticks are set up at the right positions on the plot, we use a list for this.
     ticks = np.ndarray.tolist(np.linspace(0,DateInterval,DateInterval+1)-0.5)
+    # counters is used to save the queried data into an NumPy array. it is 2 dimensional as there is only the Dates and number of detections
+    # but no different distances ranges.
     counters = np.ndarray((2,len(dates)))
-
-    for i,offset in enumerate(dates):
-           
-        df = Queries(startdate+offset,startdate+offset+1,mindistance,maxdistance,3) 
-        counters[:,i] = [offset+startdate,df['count'].values[0]]
     
+    # Each date is iterated through and the data for that day queried for the user set distances, the Query Number is 3 as that Queries Distinct Objects rather than returning
+    # all detections. 
+    for i,offset in enumerate(dates):
+        # as the dates are in MJD we can use numerical values, which allows the use of the offset to move along the start date and end date by 1 for each date that is queried
+        # so only one night is queried at a time.
+        df = Queries(startdate+offset,startdate+offset+1,mindistance,maxdistance,3)
+        # this data is then saved in the counters array with the date saved being the starting night for each observation night, df['count'].values[0] is used as only the first
+        # value in the column needs to be saved.
+        counters[:,i] = [offset+startdate,df['count'].values[0]]
+    # we then plot a seaborn barplot, with the x axis being all the date values and the y being all the distinct object detections per 24hr period.
     ax = sns.barplot(x=counters[0,:],y=counters[1,:],color='#4ad27a')
+    # we then set the xticks as python throws a warning if ticks and tick labels are not both changed at the same time.
     ax.set_xticks(ticks)
+    # We create the correct ProperDateLabels using a List Comprehension using the DateOrMJD Function you can find in Functions.Py and we put the Dates in the ISO format w/o hours
     ProperDateLabels = [DateorMJD(MJD=date,ConvertToIso=False).to_value(format='iso',subfmt='date') for date in counters[0,:]]
-
+    # we then use these newly created DateLabels and set the xticklabels to use them as the labels for the ticks on the x axis of the plot, the horizontal alignment and rotation
+    # are to prevent overlap and ensure asthetics 
     ax.set_xticklabels(ProperDateLabels+[DateorMJD(MJD=enddate,ConvertToIso=False).to_value(format='iso',subfmt='date')],horizontalalignment='left',rotation=-40)
+    # Label size is increased to make labels easier to read.
     ax.tick_params(axis='both', labelsize=16)
+    # The x and y labels and plot titles are then added.
     plt.ylabel('Number of Objects Detected over 24Hr')
     plt.xlabel('Date')
     plt.suptitle('Number of Objects')
+    # Then each bar on the plot has its width set to one so it fills its designated area rather than taking the 0.8 by default and the rectangles x location is moved by -0.1 to
+    # recentre it.
     for i,patch in enumerate(ax.patches):
         patch.set_width(1)
         patch.set_x(patch.get_x()-0.1)
     
-    
+    # Then we use SavePlot to save the plot after checking if the user wants it saved (internally in the SavePlot function), if only a title exists then the title is 
+    # used for a filename with the plot type added.
     if (filename is not None):
         SavePlot(filename, dict(),ShowPlot)
     else:
