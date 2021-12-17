@@ -44,11 +44,15 @@ def BirdsEyeViewPlotter(mindistance,maxdistance,date=None,day=None,month=None,ye
     
     
     
-    
+    ## If the dataframe is empty, ie no results or empty DataFrame passed to the function then a warning is returned to the console, and the function will just return the empty
+    ## DataFrame, therefore not generating any plots or figures.
     if df.empty :
         warnings.warn('No Results in this region for this timeframe')
         return df
     
+    # We use 'arguments' and 'setplotlabelsandlimits' as dictionaries which are used to set some of the parameters for the plots, we set the marker on the plots to a dot . for 
+    # example, in another example we can set the xlabel and ylabel of a plot using these, and as we have repeated but slightly different code, we can store the common elements 
+    # in these dictionaries, so that when we change it for when Filters is None condition, it is changed for the other condition, as such we have better mantainability and consistency
     arguments = dict(marker='.',edgecolor=None,hue = df['filter'] )
     
     setplotlabelsandlimits = dict(xlim=[-1*maxdistance,maxdistance],ylim=[-1*maxdistance,maxdistance],xlabel='x (au)',ylabel='y (au)')
@@ -89,30 +93,62 @@ def BirdsEyeViewPlotter(mindistance,maxdistance,date=None,day=None,month=None,ye
             # We then use a regex search to check if the user defined filter matches one of the filters in the dataframe and if it does
             # then it goes through and starts the plotting process.
             if re.search(filter[0],Filters):
+              # Here we create a subset of the dataframe with the current filter we are investigating
                 currentfilter = df[df['filter']==filter[0]]
+                # boolean check to see if the DF is empty of a paticular filter, necessary to prevent any errors from being thrown if the scatterplot data is empty
                 if currentfilter.empty:
                     print('Filter '+filter[0] +' has no results for this timeframe.')
                 #Creates the figure with a set size fixed at (10,10)
                 plt.figure(figsize=(10, 10))
                 plot=sns.scatterplot(x=currentfilter[xyscale[0]],y=currentfilter[xyscale[1]],**arguments)
-                #Labels the axes so that the user knows
+                #Labels the axes so that the user knows what each one refers to
                 plot.set(**setplotlabelsandlimits)
+                # We set the title of the plot, with a plethora of useful information, usage of DateorMJD is explained in the Function.Py file.
                 plt.title(title+' Filter: '+filter[0]+' '+str(DateorMJD(MJD=startdate)).replace('18:00:00.000','')+'- '+str(DateorMJD(MJD=float(enddate))).replace('18:00:00.000','')) 
+                # Information on this function is included in Function.Py aswell, however what it does, if the plot is heliocentric, then it plots the planets that are within the range
+                # of the data in the plot
                 PlotSunandPlanets(QueryNum,PlotPlanetsOnPlot,mindistance, maxdistance)
-                
+                #This code here is gca() just gets current axes, so it will get the most recent axes on your figure and this will allow the legend to be added to the plot.
                 ax=plt.gca()
+                # We anchor the legend to outside of the figure so that it doesn't overplot on possibly important points 
                 lgd = ax.legend(loc='upper left', bbox_to_anchor=(1,1), borderpad = 2, )
+                # If the user has not defined a filename then a filename is generated using the title, the parameters in the plot on the x and y
+                # axis and using a descriptor of the plot ie the '-bev', the filter name is also used in the filename to distinguish it from the other filters plots.
+                #, the legend is also applied to the ploting using a dictionary passed as the
+                # extraargs variable of SavePlot.
+                
                 if (filename is not None):
                     SavePlot(filename +'-'+filter[0] ,dict(bbox_extra_artists=(lgd,)),ShowPlot)
                 elif title is not None:
                     SavePlot(title +'-'+filter[0]+'-'+xyscale[2]+'-bev',dict(bbox_extra_artists=(lgd,)),ShowPlot)
-                
+        #If the user wants the DataFrame kept in memory for usage in other funtion calls, this if statement returns it for them.        
         if (KeepData == True):
             return DataFrame
     
 
 
-
+## mindistance: Minimum Asteroid Distance from the sun you want in the plot (int) / au
+## maxdistance: Maximum Asteroid Distance from the sun you want in the plot (int) / au
+## date: the date you want to query around (in median julian date) (defaults to current date.) (float)
+## day   In regards to date, it will revert to the 24 hour window it is contained with
+## month So 2023-08-04 [YYYY-MM-DD] would be the plot starting at 18:00 UTC (08-04) and end at 18:00 UTC (09-04)      
+## year  and you can enter these as simply, days, months and year in UTC scale.   
+## title: The Title you want the plot to have (str)
+## filename : File name is used to ally the user to explicitly specify the filename 
+## DateInterval: This is how long you want to query about the date set above, -1 would be the 24 hours before the set date.
+##               +1 would be 24 hours after set date (float), behaviour changed and now defaults to +1 date, this allows
+##               this will allow you to alter the behaviour of the function and go forward or backword in time.
+## KeepData: Used to keep query data in DataFrame Object that is returned from the function as this allows a reduction of
+##           Queries to the database. (boolean)
+## Showplot: This dictates whether the plot is closed or not after running the function, this is here to manage command
+##           line behaviour where open plot figures can cause issues with preventing code from continuing to run. whilst
+##           allowing this to be set to false so that figures are shown in Notebook form.
+## DataFrame: Allows the use of a preprepared dataframe to use in the plots as well as prevents too many queries 
+##            on the database
+## PlanetsOnPlot: This dictates whether the circular approximation of planetary orbits is plotted on the figures.
+## Filters: This is a parameter that should either be left as None to plot all filters on a single graph, or as
+##          as a string that contains the names of each of the filters you want plotted, for example:
+##          'grizy', 'y','rgy','zyri' are all valid inputs for filters.
 def Heliocentric_BirdsEyeView(mindistance,maxdistance,date=None,day=None,month=None,year=None,
                         title='',filename=None,DateInterval =1,KeepData=False,ShowPlot=True,
                         DataFrame=None,PlotPlanetsOnPlot = True,Filters=None):
@@ -121,7 +157,30 @@ def Heliocentric_BirdsEyeView(mindistance,maxdistance,date=None,day=None,month=N
                 DateInterval,KeepData,ShowPlot,DataFrame,PlotPlanetsOnPlot,Filters]
     
     return BirdsEyeViewPlotter(*variables,xyscale=['heliocentricx','heliocentricy','heliocentric'],QueryNum=1)
-    
+  
+ 
+## mindistance: Minimum Asteroid Distance from the sun you want in the plot (int) / au
+## maxdistance: Maximum Asteroid Distance from the sun you want in the plot (int) / au
+## date: the date you want to query around (in median julian date) (defaults to current date.) (float)
+## day   In regards to date, it will revert to the 24 hour window it is contained with
+## month So 2023-08-04 [YYYY-MM-DD] would be the plot starting at 18:00 UTC (08-04) and end at 18:00 UTC (09-04)      
+## year  and you can enter these as simply, days, months and year in UTC scale.   
+## title: The Title you want the plot to have (str)
+## filename : File name is used to ally the user to explicitly specify the filename 
+## DateInterval: This is how long you want to query about the date set above, -1 would be the 24 hours before the set date.
+##               +1 would be 24 hours after set date (float), behaviour changed and now defaults to +1 date, this allows
+##               this will allow you to alter the behaviour of the function and go forward or backword in time.
+## KeepData: Used to keep query data in DataFrame Object that is returned from the function as this allows a reduction of
+##           Queries to the database. (boolean)
+## Showplot: This dictates whether the plot is closed or not after running the function, this is here to manage command
+##           line behaviour where open plot figures can cause issues with preventing code from continuing to run. whilst
+##           allowing this to be set to false so that figures are shown in Notebook form.
+## DataFrame: Allows the use of a preprepared dataframe to use in the plots as well as prevents too many queries 
+##            on the database
+## PlanetsOnPlot: This is included for compatability with Birds eye view function, however, with topocentric this option is automatically not plotted (for obvious reasons)
+## Filters: This is a parameter that should either be left as None to plot all filters on a single graph, or as
+##          as a string that contains the names of each of the filters you want plotted, for example:
+##          'grizy', 'y','rgy','zyri' are all valid inputs for filters.    
 def Topocentric_BirdsEyeView(mindistance,maxdistance,date=None,day=None,month=None,year=None,
                         title='',filename=None,DateInterval =1,KeepData=False,ShowPlot=True,
                         DataFrame=None,PlotPlanetsOnPlot = True,Filters=None):
@@ -131,6 +190,32 @@ def Topocentric_BirdsEyeView(mindistance,maxdistance,date=None,day=None,month=No
     
     return BirdsEyeViewPlotter(*variables,xyscale=['topocentricx','topocentricy','topocentric'],QueryNum=4)  
 
+  
+  
+
+## mindistance: Minimum Asteroid Distance from the sun you want in the plot (int) / au
+## maxdistance: Maximum Asteroid Distance from the sun you want in the plot (int) / au
+## date: the date you want to query around (in median julian date) (defaults to current date.) (float)
+## day   In regards to date, it will revert to the 24 hour window it is contained with
+## month So 2023-08-04 [YYYY-MM-DD] would be the plot starting at 18:00 UTC (08-04) and end at 18:00 UTC (09-04)      
+## year  and you can enter these as simply, days, months and year in UTC scale.   
+## title: The Title you want the plot to have (str)
+## filename : File name is used to ally the user to explicitly specify the filename 
+## DateInterval: This is how long you want to query about the date set above, -1 would be the 24 hours before the set date.
+##               +1 would be 24 hours after set date (float), behaviour changed and now defaults to +1 date, this allows
+##               this will allow you to alter the behaviour of the function and go forward or backword in time.
+## KeepData: Used to keep query data in DataFrame Object that is returned from the function as this allows a reduction of
+##           Queries to the database. (boolean)
+## Showplot: This dictates whether the plot is closed or not after running the function, this is here to manage command
+##           line behaviour where open plot figures can cause issues with preventing code from continuing to run. whilst
+##           allowing this to be set to false so that figures are shown in Notebook form.
+## DataFrame: Allows the use of a preprepared dataframe to use in the plots as well as prevents too many queries 
+##            on the database
+## xyscale: The first two values in this list are your x and y values, and are entered as they appear in the database, the first value in the list if the appendage added to the
+##          filename.
+## xylabels: Allows custom labels for the x and y labels, passed as a list
+## QueryNum: This refers to the Query Number as seen in Functions.Py that is being called by the function
+## a_min,a_max: Are your minimum and maximum semi-major axis values that can be used to put a constraint on those values.
 def iqeaBirdsEyeView(date=None,day=None,month=None,year=None,
                         title='',filename=None,DateInterval =1,KeepData=False,ShowPlot=True,
                         DataFrame=None,xyscale=['q','e','eccentricity-perhelion'],
