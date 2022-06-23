@@ -12,3 +12,4 @@ seaborn
 plotly
 matplotlib
 psycopg2 
+sqlalchemy
