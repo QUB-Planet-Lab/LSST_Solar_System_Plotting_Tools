@@ -10,6 +10,9 @@ import numpy as np
 import sys
 
 from sqlalchemy import create_engine
+from database import DBConfig
+
+
 
 ##
 ## create_connection_and_queryDB : This function allows connection to the database.
@@ -26,9 +29,20 @@ def create_connection_and_queryDB(cmd,parameters):
     try:
         # uses the pyscopg2 module to open a connection to the postgreSQL database using the password, 5432 is the typical port to use.
         
-    	engine = create_engine(f"postgresql+psycopg2://sssc:{pwd}@epyc.astro.washington.edu:5432/lsst_solsys")
-    	with engine.connect() as conn:
-        	return pd.read_sql(cmd, conn, params = parameters)
+        db_url = DBConfig(password = pwd,
+                          user = 'sssc',
+                          port = '5432',
+                          db_name = 'lsst_solsys',
+                          dialect = 'postgresql',
+                          driver ='psycopg2',
+                          host = 'epyc.astro.washington.edu'
+                         ).database_url
+        
+        engine = create_engine(db_url)
+        
+        with engine.connect() as conn:
+            return pd.read_sql(cmd, conn, params = parameters)
+        
         # the sql command and the open connection string and the parameters are sent to the database, the database then handles the parameters themselves and treats those values
         # as values which removes issues such as sql injection from being executed.
         # connection to the database is then closed once the data is received from the database.
