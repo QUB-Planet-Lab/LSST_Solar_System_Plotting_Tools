@@ -1,0 +1,1 @@
+degree = r"$^\circ$"
