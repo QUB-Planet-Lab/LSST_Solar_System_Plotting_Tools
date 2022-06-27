@@ -4,7 +4,7 @@ import seaborn as sns
 
 class Plot():
     '''A parent class which all plotting classes inherit from.'''
-    def __init__(self, data, xlabel : str, ylabel : str = "", title: str = "", rc_params = {}):     
+    def __init__(self, data, xlabel : str, ylabel : str = "", title: str = "", rc_params : dict = {}):     
         self.data = data
         if rc_params:
             self.context = sns.set(rc=rc_params)# add all rc params here. Can be used for seaborn and matplotlib as long as it is figure level.
@@ -26,6 +26,8 @@ class Plot():
     
     def save(self, file_name : str, extension : Literal['png', 'jpeg', 'pdf'] = 'png'):
         # Need to validate these arguments, filepath?
+        if self.context:
+            self.context
         self.plot
         self.add_plot_info()
         plt.savefig(f"{file_name}.{extension}")
