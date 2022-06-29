@@ -9,7 +9,7 @@ class ViolinPlot(Plot):
         self.y = y
         
         if ax:
-            self.plot = sns.violinplot(x = data[self.x], y = data[self.y], ax = ax)
+            self.plot = violinplot(x = data[self.x], y = data[self.y], ax = ax)
         else:
             if not y:
                 self.plot = violinplot(x = data[self.x])

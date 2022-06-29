@@ -60,7 +60,7 @@ def eccentricity(filters: Optional[list] = None,
                     filters: {filters},
                     start_time: {start_time},
                     end_time: {end_time},
-                    min_e: {e},
+                    min_e: {min_e},
                     max_peri: {max_e},
                 """)
     
