@@ -3,6 +3,10 @@ from typing import Literal, Optional
 
 @dataclass
 class DBConfig:
+    """
+    :param user: str
+    :param port: str
+    """
     user : str
     port : str
     db_name : str
@@ -13,7 +17,10 @@ class DBConfig:
     
     
     @property
-    def database_url(self): # change dialect
+    def database_url(self) -> str: # change dialect
+        """ database url
+        :return: str
+        """
         return f"{self.dialect}+{self.driver}://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
     
     
