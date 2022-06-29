@@ -1,3 +1,3 @@
-degree = r"$^\circ$"
-beta = r"$\beta$"
-_lambda = r"$\lambda$"
+DEGREE = r"$^\circ$"
+BETA = r"$\beta$"
+LAMBDA = r"$\lambda$"
