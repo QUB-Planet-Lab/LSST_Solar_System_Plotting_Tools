@@ -1,0 +1,38 @@
+from . import Base
+from sqlalchemy import Column,BigInteger, Float, ForeignKey #, BLOB
+
+class SSSource(Base):
+    __tablename__ = "sssources"
+    
+    ssObjectId = Column("ssobjectid", BigInteger, primary_key=True)
+    diasourceid = Column(BigInteger, ForeignKey('diasources.diasourceid'))
+    mpcuniqueid = Column(BigInteger)
+    nearbyobj = Column(BigInteger)
+    nearbyobjdist = Column(Float)
+    nearbyobjlnp = Column(Float(6))
+    eclipticlambda = Column(Float(2))
+    eclipticbeta = Column(Float(2))
+    galacticl = Column(Float(2))
+    galacticb = Column(Float(2))
+    phaseangle = Column(Float)
+    heliocentricdist = Column(Float)
+    topocentricdist = Column(Float)
+    predictedmagnitude = Column(Float)
+    predictedmagnitudesigma = Column(Float)
+    residualra = Column(Float(2))
+    residualdec = Column(Float(2))
+    predictedrasigma = Column(Float(2))
+    predicteddecsigma = Column(Float)
+    predictedradeccov = Column(Float)
+    heliocentricx = Column(Float)
+    heliocentricy = Column(Float)
+    heliocentricz = Column(Float)
+    heliocentricvx = Column(Float)
+    heliocentricvy = Column(Float)
+    heliocentricvz = Column(Float)
+    topocentricx = Column(Float)
+    topocentricy = Column(Float)
+    topocentricz = Column(Float)
+    topocentricvx = Column(Float)
+    topocentricvy = Column(Float)
+    topocentricvz = Column(Float)
