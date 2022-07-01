@@ -1,15 +1,11 @@
+from .format_time import format_times
+
 def validate_times(start_time = None, end_time = None):
 
     min_time = 59853.985644 
     max_time = 63506.394108 # currently hardcoded, need to change later for non-simulated database
     
-    if start_time and type(start_time) != float:
-        pass
-    #convert from ISO to float
-    
-    if end_time and type(end_time) != float:
-        pass
-    #convert from ISO to float
+    start_time, end_time = format_times(times = [start_time], _format="MJD")[0], format_times(times = [end_time], _format="MJD")[0]
     
     
     if (start_time and end_time) and (start_time > end_time):
@@ -54,4 +50,10 @@ def validate_inclination(min_incl: float, max_incl:float):
     return min_incl, max_incl
         
     
-    
+def validate_semi_major_axis(min_a : float, max_a:float):
+    if (min_a and min_a < 0) or (max_a and max_a < 0):
+        raise Exception("min_a and max_a must be greater than 0")
+    if (min_a and max_a) and min_a > max_a:
+        raise Exception("max_a must be greater than min_a")
+        
+    return min_a, max_a
