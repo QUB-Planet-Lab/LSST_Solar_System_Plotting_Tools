@@ -10,5 +10,5 @@ class ScatterPlot(Plot):
             :param: x, value to be plotted on x scale
         """
         super().__init__(data, xlabel, ylabel, title, rc_params)
-        self.plot = scatterplot(x = data[x], y = data[y], s=2)
+        self.plot = scatterplot(x = data[x], y = data[y], ax = self.ax)
        
