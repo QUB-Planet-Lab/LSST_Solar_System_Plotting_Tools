@@ -68,10 +68,10 @@ def base(
         conditions.append(mpcorb.c['peri'] > max_peri)
     
     if min_e:
-        condition.append(mpcorb.c['e'] >= min_e)
+        conditions.append(mpcorb.c['e'] >= min_e)
     
     if max_e:
-        condition.append(mpcorb.c['e'] <= max_e)
+        conditions.append(mpcorb.c['e'] <= max_e)
         
     if min_incl:
         conditions.append(mpcorb.c['incl'] >= min_incl)
