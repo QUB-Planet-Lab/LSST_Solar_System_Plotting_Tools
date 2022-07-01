@@ -4,17 +4,18 @@ def validate_times(start_time = None, end_time = None):
 
     min_time = 59853.985644 
     max_time = 63506.394108 # currently hardcoded, need to change later for non-simulated database
-    
-    start_time, end_time = format_times(times = [start_time], _format="MJD")[0], format_times(times = [end_time], _format="MJD")[0]
-    
-    
+    if start_time:
+        start_time = format_times(times = [start_time], _format="MJD")[0]
+    if end_time:
+        end_time = format_times(times = [end_time], _format="MJD")[0]
+   
     if (start_time and end_time) and (start_time > end_time):
         raise Exception("Invalid time range. The start_time must be greater than the end_time to create a valid range")
     
     if start_time and (start_time < min_time):
         raise Exception(f"Invalid start time. The start_time must be greater than {min_time} (MJD)")
     
-    if end_time and (end_time > max_time):
+    if end_time and (float(end_time) > max_time):
         raise Exception(f"Invalid end time. The end_time must be less than {max_time} (MJD)")
     
     

@@ -9,8 +9,8 @@ class ViolinPlot(Plot):
         self.y = y
         
         if not y:
-            self.plot = violinplot(x = data[self.x], ax = self.ax)
+            self.plot = violinplot(x = data[self.x], ax = self.ax).set(xlabel="", ylabel="")
         elif not x:
-            self.plot = violinplot(y = data[self.y], ax = self.ax)
+            self.plot = violinplot(y = data[self.y], ax = self.ax).set(xlabel="", ylabel="")
         else:
-            self.plot = violinplot(x = data[self.x], y = data[self.y], ax = self.ax)
+            self.plot = violinplot(x = data[self.x], y = data[self.y], ax = self.ax).set(xlabel="", ylabel="")

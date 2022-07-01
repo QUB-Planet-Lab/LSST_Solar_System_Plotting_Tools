@@ -45,6 +45,7 @@ def base(
     conditions = []
     
     start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+    
     # need a validate eccentricty function
     
     if start_time:
@@ -94,27 +95,27 @@ def base(
     if df.empty:
         query = f"""No results returned for your query:\n"""
         if filters:
-            query.append(f"filters : {filters}\n")
+            query += f"filters : {filters}\n"
         if start_time:
-            query.append(f"start_time : {start_time}\n")
+            query += f"start_time : {start_time}\n"
         if end_time:
-            query.append(f"end_time : {end_time}\n")
+            query += f"end_time : {end_time}\n"
         if min_e:
-            query.append(f"min_e : {min_e}\n")
+            query += f"min_e : {min_e}\n"
         if max_e:
-            query.append(f"max_e : {max_e}\n")
+            query += f"max_e : {max_e}\n"
         if min_a:
-            query.append(f"min_a : {min_a}\n")
+            query += f"min_a : {min_a}\n"
         if max_a:
-            query.append(f"max_a : {max_a}\n")
+            query += f"max_a : {max_a}\n"
         if min_incl:
-            query.append(f"min_incl : {min_incl}\n")
+            query += f"min_incl : {min_incl}\n"
         if max_incl:
-            query.append(f"max_incl : {max_incl}\n")
+            query += f"max_incl : {max_incl}\n"
         if min_peri:
-            query.append(f"min_peri : {min_peri}\n")
+            query += f"min_peri : {min_peri}\n"
         if max_peri:
-            query.append(f"max_peri : {max_peri}\n")
+            query += f"max_peri : {max_peri}\n"
         
         query = query[0:-1]
                          
@@ -135,15 +136,11 @@ def base(
     start_time, end_time = format_times([start_time, end_time], _format="ISO")
     label = ELEMENTS[element]['label']
     unit = ELEMENTS[element]['unit']
+    xlabel = label
+    if unit:
+        xlabel += f' ({unit})'
     args = dict(data = df, x = element, 
-                xlabel = f'{label} ({unit})' , 
-                rc_params={'figure.figsize':(12,8),
-                           "figure.titlesize" : 18, 
-                           "axes.labelsize" : 16,
-                           #"axes.facecolor": "#0000ff",
-                           "figure.edgecolor": "black",
-                           "patch.facecolor": "#0000ff",
-                          }
+                xlabel = f'{xlabel}', 
                ) # plot_info = plot_info
     
     if filters:

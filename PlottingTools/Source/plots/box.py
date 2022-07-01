@@ -10,11 +10,11 @@ class BoxPlot(Plot):
         
         
         if not y:
-            self.plot = boxplot(x = data[self.x], ax = self.ax)
+            self.plot = boxplot(x = data[self.x], ax = self.ax).set(xlabel="", ylabel="")
         elif not x:
-            self.plot = boxplot(y = data[self.y], ax = self.ax)
+            self.plot = boxplot(y = data[self.y], ax = self.ax).set(xlabel="", ylabel="")
         else:
-            self.plot = boxplot(x = data[self.x], y = data[self.y], ax = self.ax)
+            self.plot = boxplot(x = data[self.x], y = data[self.y], ax = self.ax).set(xlabel="", ylabel="")
             
     
 class BoxenPlot(Plot):
@@ -25,11 +25,11 @@ class BoxenPlot(Plot):
         self.y = y
        
         if not y:
-            self.plot = boxenplot(x = data[self.x], ax = self.ax)
+            self.plot = boxenplot(x = data[self.x], ax = self.ax).set(xlabel="", ylabel="")
         elif not x:
-            self.plot = boxenplot(y = data[self.y], ax = self.ax)
+            self.plot = boxenplot(y = data[self.y], ax = self.ax).set(xlabel="", ylabel="")
         else:
-            self.plot = boxenplot(x = data[self.x], y = data[self.y], ax = self.ax)
+            self.plot = boxenplot(x = data[self.x], y = data[self.y], ax = self.ax).set(xlabel="", ylabel="")
 
         
         
