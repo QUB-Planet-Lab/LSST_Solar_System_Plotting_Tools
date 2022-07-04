@@ -53,9 +53,6 @@ class Plot():
             at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
             self.ax.add_artist(at)
             
-        
-        
-        
     def save(self, file_name : str, extension : Literal['png', 'jpeg', 'pdf'] = 'png'):
         if self.context:
             self.context
