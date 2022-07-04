@@ -14,4 +14,5 @@ from .ss_source import SSSource
 
 diasource = DIASource.__table__
 mpcorb = MPCORB.__table__
-
+ssobjects = SSObjects.__table__
+sssource = SSSource.__table__

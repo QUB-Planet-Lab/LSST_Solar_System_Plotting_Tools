@@ -14,7 +14,7 @@ class SSSource(Base):
     eclipticbeta = Column(Float(2))
     galacticl = Column(Float(2))
     galacticb = Column(Float(2))
-    phaseangle = Column(Float)
+    phaseangle = Column("phaseangle", Float)
     heliocentricdist = Column(Float)
     topocentricdist = Column(Float)
     predictedmagnitude = Column(Float)

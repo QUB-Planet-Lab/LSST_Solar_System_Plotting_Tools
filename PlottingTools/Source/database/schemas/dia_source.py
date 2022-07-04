@@ -11,6 +11,7 @@ class DIASource(Base):
     midpointtai = Column("midpointtai", Float(2))
     ssObjectId = Column("ssobjectid", BigInteger) 
     mag = Column(Float)
+    magSigma = Column("magsigma", Float)
     filter = Column(VARCHAR(1)) # filter name cause issues later on
     # (handle relationships) ssobjectid
     '''
