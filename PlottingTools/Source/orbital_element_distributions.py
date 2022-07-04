@@ -61,25 +61,33 @@ def base(
     min_peri, max_peri = validate_perihelion(min_peri, max_peri)
     min_incl, max_incl = validate_inclination(min_incl = min_incl, max_incl = max_incl)
     min_a, max_a = validate_semi_major_axis(min_a, max_a)
+   
     
     
-    if max_peri:
-        conditions.append(mpcorb.c['peri'] < min_peri)
     if min_peri:
-        conditions.append(mpcorb.c['peri'] > max_peri)
+        conditions.append(mpcorb.c['peri'] >= min_peri)
+    if max_peri:
+        conditions.append(mpcorb.c['peri'] <= max_peri)
     
-    if min_e:
-        conditions.append(mpcorb.c['e'] >= min_e)
     
-    if max_e:
-        conditions.append(mpcorb.c['e'] <= max_e)
         
     if min_incl:
         conditions.append(mpcorb.c['incl'] >= min_incl)
     
     if max_incl:
         conditions.append(mpcorb.c['incl'] <= max_incl)
+        
+    if min_a or max_a:
+        conditions.append(mpcorb.c['e'] > 0 )
     
+        conditions.append(mpcorb.c['e'] < 1)
+    
+    elif not min_a and not max_a:
+        if min_e:
+            conditions.append(mpcorb.c['e'] >= min_e )
+        if max_e:
+            conditions.append(mpcorb.c['e'] <= min_e )
+                
     if min_a:
         conditions.append((mpcorb.c['peri'] / (1 - mpcorb.c['e']) ) >= min_a)
     
