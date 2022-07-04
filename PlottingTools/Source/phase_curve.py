@@ -1,56 +1,52 @@
-import os
-import sys
-import pathlib
+from database import db
+from database.schemas import diasource, mpcorb, ssobjects, sssource
+from database.validators import validate_times, validate_filter
+from database.format_time import format_times
 
-PACKAGE_PARENT = pathlib.Path.cwd().parent
-SCRIPT_DIR = PACKAGE_PARENT / 'Source'
-sys.path.append(str(SCRIPT_DIR))
+from typing import Literal, Optional
+from sqlalchemy import select
 
-import numpy as np
-from DataAccessLayer import create_connection_and_queryDB
-from matplotlib import pyplot as plt
-from plots.scatter import ScatterPlot
-from plots.symbols import degree, beta, _lambda
-from sbpy.photometry import HG
-from typing import Literal
-from plots.symbols import degree
+from plots import ScatterPlot
+from plots.symbols import DEGREE
 
-def phase_curve(mpc_designation : str, _filter: Literal['g','r','i','z','y', 'u']):
-    query = f"""
-            SELECT
-                mpcdesignation, ssObjects.ssObjectId, mag, magSigma, filter, midPointTai as mjd, ra, decl, phaseAngle,
-                topocentricDist, heliocentricDist
-            FROM
-                mpcorb
-                JOIN ssObjects USING (ssobjectid)
-                JOIN diaSources USING (ssobjectid)
-                JOIN ssSources USING (diaSourceid)
-            WHERE
-                mpcdesignation = '{mpc_designation}' and filter='{_filter}'
-        """
+def phase_curve(_filter: Optional[Literal['g','r','i','z','y', 'u']] = None,
+                start_time : Optional[float] = None, end_time : Optional[float] = None,
+                title : Optional[str] = None,
+                mpcdesignation: Optional[str] = None
+):
+
+    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+
+
+    cols = [diasource.c['magsigma'], diasource.c['filter'], mpcorb.c['mpcdesignation'], diasource.c['midpointtai'],diasource.c['mag'], sssource.c['phaseangle']]
     
-    df = create_connection_and_queryDB(query, dict(mpcdesignation=mpc_designation, _filter = _filter))
-          
-    df["cmag"] = df["mag"] - 5*np.log10(df["topocentricdist"]*df["heliocentricdist"])
+    conditions = []
     
+    if _filter:
+        
+        _filter = validate_filter(_filter)
+           
+        conditions.append(diasource.c['filter'] == _filter)
+        
+    if mpcdesignation:
+        conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
+   
     
-    plt.errorbar(df["phaseangle"], df["cmag"], df["magsigma"], ls='none')
-    plt.gca().invert_yaxis()
-    plt.xlabel(f"Phase Angle ({degree})")
-    plt.ylabel(f"Distance corrected {_filter} magnitude")
-    plt.title(f'Phase curve for {df["mpcdesignation"].iloc[0].strip()}, {_filter} band')
+    if start_time:
+        conditions.append(diasource.c['midpointtai'] >= start_time)
     
+    if end_time:
+        conditions.append(diasource.c['midpointtai'] <= end_time)
     
-    #Add phase curve
-    ssoId = int(df["ssobjectid"].iloc[0])
+    stmt = select(*cols).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
     
-    hg = create_connection_and_queryDB(f"SELECT {_filter}H, {_filter}G12, {_filter}HErr, {_filter}G12Err, {_filter}Chi2 FROM ssObjects WHERE ssObjectId=%(ssoId)s", dict(ssoId=ssoId))
+    df = db.query(
+        stmt
+    )
     
+    pc = ScatterPlot(data = df, x = "phaseangle", y="mag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation}\n {start_time} - {end_time}", xlabel=f"Phase Angle ({DEGREE})", ylabel="Magnitude")
     
-    H, G, sigmaH, sigmaG, chi2dof = hg.iloc[0]
-    _ph = sorted(df["phaseangle"])
-    _mag = HG.evaluate(np.deg2rad(_ph), H, G)
-    plt.plot(_ph, _mag)
+    pc.ax.invert_yaxis()
     
-    plt.savefig(f"{mpc_designation}_phase_curve.png")
-    return 
+    return pc
+
