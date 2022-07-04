@@ -1,5 +1,7 @@
 from .format_time import format_times
 
+
+FILTERS = ["g", "r", "i", "z", "y", "u"]
 def validate_times(start_time = None, end_time = None):
 
     min_time = 59853.985644 
@@ -20,14 +22,18 @@ def validate_times(start_time = None, end_time = None):
     
     
     return start_time, end_time
-        
+
+def validate_filter(_filter: str):
+    if _filter not in FILTERS:
+        raise TypeError(f"Please specifiy a filter from one of the following: {FILTERS}")
+    return _filter
+
 def validate_filters(filters : list):
-    available_filters = ["g", "r", "i", "z", "y", "u"]
     if type(filters) != list:
-        raise TypeError(f"Please specifiy a list that may include the following: {available_filters}")
+        raise TypeError(f"Please specifiy a list that may include the following: {FILTERS}")
     for _filter in filters:
-        if _filter not in available_filters:
-            raise Exception(f"{_filter} is not a valid filter. Please specifiy a list that may include the following: {available_filters}")
+        if _filter not in FILTERS:
+            raise Exception(f"{_filter} is not a valid filter. Please specifiy a list that may include the following: {FILTERS}")
     return filters
 
 def validate_perihelion(min_peri: float, max_peri: float):
