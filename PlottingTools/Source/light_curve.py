@@ -78,7 +78,6 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
     df = db.query(
              stmt
     )
-    print(df)
     
     if df.empty:
         if df.empty:
