@@ -17,18 +17,24 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
                 mpcdesignation: Optional[str] = None,
+                ssobjectid: Optional[int] = None,
                 time_format: Optional[Literal['ISO', 'MJD']] = 'ISO'
                ):
         
     start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
     
-
+    if not ssobjectid and not mpcdesignation:
+        # More needed to handle both when ssobjectid and mpcdesingation is specified?
+        raise Exception("You must provide either an mpcdesignation or an ssobjectid to this function")
+        
+    
     cols = [
             diasource.c['magsigma'],
             diasource.c['filter'],
             mpcorb.c['mpcdesignation'],
             diasource.c['midpointtai'],
-            diasource.c['mag']
+            diasource.c['mag'],
+            diasource.c['ssobjectid'],
            ]
     
     conditions = []
@@ -50,6 +56,8 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
     if mpcdesignation:
         conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
    
+    if ssobjectid:
+        conditions.append(mpcorb.c['ssobjectid'] == ssobjectid)
     
     if start_time:
         conditions.append(diasource.c['midpointtai'] >= start_time)
@@ -65,11 +73,30 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
     #    stmt.join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     
     stmt = select(*cols).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).where(*conditions)
+    # No need for third join currently
     
     df = db.query(
              stmt
     )
+    print(df)
     
+    if df.empty:
+        if df.empty:
+            query = f"""No results returned for your query:\n"""
+        if _filter:
+            query += f"filter : {_filter}\n"
+        if start_time:
+            query += f"start_time : {start_time}\n"
+        if end_time:
+            query += f"end_time : {end_time}\n"
+        if mpcdesignation:
+            query += f"mpcdesignation : {mpcdesignation}\n"
+        if ssobjectid:
+            query += f"ssobjectid : {ssobjectid}\n"
+                
+        query = query[0:-1]
+                         
+        raise Exception(query)
     
     if time_format == 'ISO':
         df['datetimes'] = pd.to_datetime(format_times(df['midpointtai'].to_list(), _format = "ISO"))
@@ -90,7 +117,7 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
         yerr = df[f"magsigma"]
     '''
     
-    lc = ScatterPlot(data = df, x = x, y = "mag", yerr=df["magsigma"], title=title if title else f"{mpcdesignation}\n {start_time} - {end_time}" + f"\n {_filter} filter", xlabel = xlabel, ylabel="Magnitude")
+    lc = ScatterPlot(data = df, x = x, y = "mag", yerr=df["magsigma"], title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}" + f"\n {_filter} filter", xlabel = xlabel, ylabel="Magnitude")
 
     #lc.ax.plot() add fit here
     

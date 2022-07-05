@@ -12,13 +12,15 @@ from plots.symbols import DEGREE
 def phase_curve(_filter: Optional[Literal['g','r','i','z','y', 'u']] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
-                mpcdesignation: Optional[str] = None
+                mpcdesignation: Optional[str] = None,
+                ssobjectid: Optional[int] = None,
+
 ):
 
     start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
 
 
-    cols = [diasource.c['magsigma'], diasource.c['filter'], mpcorb.c['mpcdesignation'], diasource.c['midpointtai'],diasource.c['mag'], sssource.c['phaseangle']]
+    cols = [diasource.c['magsigma'], diasource.c['filter'], mpcorb.c['mpcdesignation'], diasource.c['ssobjectid'], diasource.c['midpointtai'],diasource.c['mag'], sssource.c['phaseangle']]
     
     conditions = []
     
@@ -31,6 +33,8 @@ def phase_curve(_filter: Optional[Literal['g','r','i','z','y', 'u']] = None,
     if mpcdesignation:
         conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
    
+    if ssobjectid:
+        conditions.append(mpcorb.c['ssobjectid'] == ssobjectid)
     
     if start_time:
         conditions.append(diasource.c['midpointtai'] >= start_time)
@@ -44,7 +48,8 @@ def phase_curve(_filter: Optional[Literal['g','r','i','z','y', 'u']] = None,
         stmt
     )
     
-    pc = ScatterPlot(data = df, x = "phaseangle", y="mag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation}\n {start_time} - {end_time}", xlabel=f"Phase Angle ({DEGREE})", ylabel="Magnitude")
+    
+    pc = ScatterPlot(data = df, x = "phaseangle", y="mag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}", xlabel=f"Phase Angle ({DEGREE})", ylabel="Magnitude")
     
     pc.ax.invert_yaxis()
     
