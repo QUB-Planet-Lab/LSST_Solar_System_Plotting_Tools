@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.offsetbox import AnchoredText
 
+import pathlib
 
 class Plot():
     '''A parent class which all plotting classes inherit from.'''
@@ -13,9 +14,10 @@ class Plot():
         else:
             self.context = None
         
+        plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
         self.fig, self.ax = plt.subplots()
         
-        self.title = title
+        self.title = title # Is is necessary to add these to variables?
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.plot_info = plot_info
@@ -41,6 +43,21 @@ class Plot():
         if self.ylabel:
             self.ax.set_ylabel('')
 
+    def update_title(self, _title):
+        #self.title(_title)
+        self.fig.suptitle(_title)
+        return
+    
+    def update_xlabel(self, _xlabel):
+        #self.xlabel(_xlabel)
+        self.fig.supxlabel(_xlabel)
+        return
+    
+    def update_ylabel(self, _ylabel):
+        #self.ylabel(_ylabel)
+        self.fig.supylabel(_ylabel)
+        return
+        
     def add_plot_info(self):
         if self.plot_info:
             text_box = ""

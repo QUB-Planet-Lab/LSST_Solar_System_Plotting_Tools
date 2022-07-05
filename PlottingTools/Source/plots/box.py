@@ -1,10 +1,12 @@
 from .plot import Plot
 from seaborn import boxplot, boxenplot
+import matplotlib.pyplot as plt
 
 class BoxPlot(Plot):
     def __init__(self, data, x = None, y = None, xlabel: str = "" , ylabel : str = "", title: str = "", rc_params : dict = {}, ax = None):
         super().__init__(data, xlabel, ylabel, title, rc_params)
-        print(x, y)
+
+        
         self.x = x
         self.y = y
         

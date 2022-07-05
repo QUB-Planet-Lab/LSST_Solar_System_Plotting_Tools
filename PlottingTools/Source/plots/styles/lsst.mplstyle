@@ -1,0 +1,7 @@
+axes.titlesize : 16
+axes.labelsize : 12
+lines.linewidth : 2
+lines.markersize : 5
+
+axes.prop_cycle: cycler('color', ['ED4C4C', 'FAB364', 'FFE266', '583671', '3CAE3F', '1C81A4'])
+
