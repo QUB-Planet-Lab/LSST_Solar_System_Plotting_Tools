@@ -18,6 +18,7 @@ class Plot():
             self.context = None
             
         add_font()
+        
         plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
         self.fig, self.ax = plt.subplots()
         
