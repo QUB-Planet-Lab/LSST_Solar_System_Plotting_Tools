@@ -4,6 +4,9 @@ import seaborn as sns
 from matplotlib.offsetbox import AnchoredText
 
 import pathlib
+from plots.fonts import add_font
+
+import matplotlib.font_manager
 
 class Plot():
     '''A parent class which all plotting classes inherit from.'''
@@ -13,7 +16,8 @@ class Plot():
             self.context = sns.set(rc=rc_params)# add all rc params here. Can be used for seaborn and matplotlib as long as it is figure level.
         else:
             self.context = None
-        
+            
+        add_font()
         plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
         self.fig, self.ax = plt.subplots()
         
