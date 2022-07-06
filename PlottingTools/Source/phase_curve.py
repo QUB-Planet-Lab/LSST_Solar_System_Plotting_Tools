@@ -48,6 +48,23 @@ def phase_curve(_filter: Optional[Literal['g','r','i','z','y', 'u']] = None,
         stmt
     )
     
+    if df.empty:
+        query = f"""No results returned for your query:\n"""
+        if _filter:
+            query += f"filter : {_filter}\n"
+        if start_time:
+            query += f"start_time : {start_time}\n"
+        if end_time:
+            query += f"end_time : {end_time}\n"
+        if mpcdesignation:
+            query += f"mpcdesignation : {mpcdesignation}\n"
+        if ssobjectid:
+            query += f"ssobjectid : {ssobjectid}\n"
+
+        query = query[0:-1]
+    
+        print(query)
+        return
     
     pc = ScatterPlot(data = df, x = "phaseangle", y="mag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}", xlabel=f"Phase Angle ({DEGREE})", ylabel="Magnitude")
     

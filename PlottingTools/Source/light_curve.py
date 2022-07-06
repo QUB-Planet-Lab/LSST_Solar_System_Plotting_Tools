@@ -94,8 +94,9 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
             query += f"ssobjectid : {ssobjectid}\n"
                 
         query = query[0:-1]
-                         
-        raise Exception(query)
+        
+        print(query)
+        return # Is this the best way to return no results?
     
     if time_format == 'ISO':
         df['datetimes'] = pd.to_datetime(format_times(df['midpointtai'].to_list(), _format = "ISO"))
@@ -105,20 +106,9 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
         x = "midpointtai"
         xlabel = "Time (MJD)"
     
-    '''
-    if _filter:
-        y = f"{_filter}h"
-        yerr = df[f"{_filter}herr"]
-    
-    
-    elif not _filter:
-        y = "mag"
-        yerr = df[f"magsigma"]
-    '''
-    
+
     lc = ScatterPlot(data = df, x = x, y = "mag", yerr=df["magsigma"], title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}" + f"\n {_filter} filter", xlabel = xlabel, ylabel="Magnitude")
 
-    #lc.ax.plot() add fit here
     
     lc.fig.autofmt_xdate()
     lc.ax.invert_yaxis()

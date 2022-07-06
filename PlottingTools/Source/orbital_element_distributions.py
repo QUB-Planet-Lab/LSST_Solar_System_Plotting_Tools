@@ -126,21 +126,10 @@ def base(
             query += f"max_peri : {max_peri}\n"
         
         query = query[0:-1]
-                         
-        raise Exception(query)
+        print(query)
+        return 
 
-    '''
-    # TODO add plot info card
-    if start_time:
-        plot_info['start'] = start_time
     
-    if end_time:
-        plot_info['end'] = end_time
-    
-    if min_a:
-        plot_info['min_a'] = min_a
-    
-    '''
     start_time, end_time = format_times([start_time, end_time], _format="ISO")
     label = ELEMENTS[element]['label']
     unit = ELEMENTS[element]['unit']
@@ -149,7 +138,7 @@ def base(
         xlabel += f' ({unit})'
     args = dict(data = df, x = element, 
                 xlabel = f'{xlabel}', 
-               ) # plot_info = plot_info
+               ) 
     
     if filters:
         args['y'] = "filter"
@@ -184,8 +173,6 @@ def eccentricity(filters: Optional[list] = None,
                  title : Optional[str] = None
                 ):
     
-    """   
-    """
     
     return base(
         filters = filters,
