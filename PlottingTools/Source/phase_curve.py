@@ -1,6 +1,6 @@
 from database import db
 from database.schemas import diasource, mpcorb, ssobjects, sssource
-from database.validators import validate_times, validate_filter
+from database.validators import validate_times, validate_filters
 from database.format_time import format_times
 
 from typing import Literal, Optional
@@ -8,8 +8,11 @@ from sqlalchemy import select
 
 from plots import ScatterPlot
 from plots.symbols import DEGREE
+from plots.styles.filter_color_scheme import COLOR_SCHEME
 
-def phase_curve(_filter: Optional[Literal['g','r','i','z','y', 'u']] = None,
+import pandas as pd
+
+def phase_curve(filters: Optional[list] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
                 mpcdesignation: Optional[str] = None,
@@ -24,11 +27,12 @@ def phase_curve(_filter: Optional[Literal['g','r','i','z','y', 'u']] = None,
     
     conditions = []
     
-    if _filter:
+    if filters:
         
-        _filter = validate_filter(_filter)
+        filters = validate_filters(list(set(filters)))
+        conditions.append(diasource.c['filter'].in_(filters))
            
-        conditions.append(diasource.c['filter'] == _filter)
+        #conditions.append(diasource.c['filter'] == filter)
         
     if mpcdesignation:
         conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
@@ -66,8 +70,20 @@ def phase_curve(_filter: Optional[Literal['g','r','i','z','y', 'u']] = None,
         print(query)
         return
     
-    pc = ScatterPlot(data = df, x = "phaseangle", y="mag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}", xlabel=f"Phase Angle ({DEGREE})", ylabel="Magnitude")
-    
+    if filters:
+        pc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values), x = "phaseangle", y="mag", title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}", xlabel=f"Phase Angle ({DEGREE})", ylabel="Magnitude")
+
+        for _filter in filters:
+            df_filter = df[df['filter'] == _filter]
+            if not df_filter.empty:
+                pc.ax.errorbar(data = df_filter , x = "phaseangle", y = "mag", yerr=df_filter['magsigma'], label=_filter, fmt='o', c = COLOR_SCHEME[_filter])
+        # add filter to plot
+        pc.ax.legend(loc="upper right")        
+
+    else:
+        pc = ScatterPlot(data = df, x = "phaseangle", y="mag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}", xlabel=f"Phase Angle ({DEGREE})", ylabel="Magnitude")
+
+        
     pc.ax.invert_yaxis()
     
     return pc

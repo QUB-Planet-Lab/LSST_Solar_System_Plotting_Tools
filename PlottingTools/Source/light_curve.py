@@ -1,6 +1,6 @@
 from database import db
 from database.schemas import diasource, mpcorb, ssobjects, sssource
-from database.validators import validate_times, validate_filter
+from database.validators import validate_times, validate_filters
 from database.format_time import format_times
 
 from plots import Plot, ScatterPlot
@@ -13,7 +13,11 @@ import matplotlib.ticker as ticker
 from typing import Optional, Literal
 import pandas as pd
 
-def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
+from plots.styles.filter_color_scheme import COLOR_SCHEME
+
+
+
+def light_curve(filters: Optional[list] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
                 mpcdesignation: Optional[str] = None,
@@ -24,7 +28,7 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
     start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
     
     if not ssobjectid and not mpcdesignation:
-        # More needed to handle both when ssobjectid and mpcdesingation is specified?
+        # More needed to handle when both when ssobjectid and mpcdesingation is specified?
         raise Exception("You must provide either an mpcdesignation or an ssobjectid to this function")
         
     
@@ -39,18 +43,10 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
     
     conditions = []
     
-    if _filter:
+    if filters:
         
-        _filter = validate_filter(_filter)
-        '''
-        for col in [ssobjects.c[f'{_filter}h'],
-            ssobjects.c[f'{_filter}herr']]:
-        
-            cols.append(
-                col
-            )
-        '''
-        conditions.append(diasource.c['filter'] == _filter)
+        filters = validate_filters(list(set(filters)))
+        conditions.append(diasource.c['filter'].in_(filters))
     
         
     if mpcdesignation:
@@ -106,13 +102,27 @@ def light_curve(_filter: Optional[Literal['g','r','i','z','y']] = None,
         x = "midpointtai"
         xlabel = "Time (MJD)"
     
-
-    lc = ScatterPlot(data = df, x = x, y = "mag", yerr=df["magsigma"], title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}" + f"\n {_filter} filter", xlabel = xlabel, ylabel="Magnitude")
+    
+    if filters:
+        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}", xlabel = xlabel, ylabel="Magnitude")
 
     
+    
+    
+        for _filter in filters:
+            df_filter = df[df['filter'] == _filter]
+            if not df_filter.empty:
+                lc.ax.errorbar(data = df_filter , x = x, y = "mag", yerr=df_filter['magsigma'], label=_filter, fmt='o', c = COLOR_SCHEME[_filter])
+        # add filter to plot
+        lc.ax.legend(loc="upper right")        
+
+    else:
+        lc = ScatterPlot(data = df , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}", xlabel = xlabel, ylabel="Magnitude")
+        
     lc.fig.autofmt_xdate()
     lc.ax.invert_yaxis()
-
     return lc
+        
+
     
     
