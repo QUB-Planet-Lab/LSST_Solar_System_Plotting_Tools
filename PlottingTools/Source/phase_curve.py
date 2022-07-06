@@ -13,9 +13,6 @@ from plots.styles.filter_color_scheme import COLOR_SCHEME
 import pandas as pd
 
 
-def phase_curve
-
-
 def phase_curve(filters: Optional[list] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
@@ -92,3 +89,4 @@ def phase_curve(filters: Optional[list] = None,
     
     return pc
 
+ 
