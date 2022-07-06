@@ -55,7 +55,7 @@ def phase_curve(filters: Optional[list] = None,
     if df.empty:
         query = f"""No results returned for your query:\n"""
         if _filter:
-            query += f"filter : {_filter}\n"
+            query += f"filters : {filters}\n"
         if start_time:
             query += f"start_time : {start_time}\n"
         if end_time:
