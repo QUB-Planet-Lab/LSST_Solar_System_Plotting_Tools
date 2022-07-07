@@ -1,6 +1,7 @@
 from plots.box import BoxPlot, BoxenPlot
 from plots.violin import ViolinPlot
 from plots.symbols import DEGREE
+from plots.styles.filter_color_scheme import COLOR_SCHEME
 
 from database import db
 from database.schemas import DIASource, diasource, mpcorb
@@ -10,6 +11,7 @@ from database.format_time import format_times
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 from typing import Optional, Literal
 
@@ -136,7 +138,7 @@ def base(
     xlabel = label
     if unit:
         xlabel += f' ({unit})'
-    args = dict(data = df, x = element, 
+    args = dict(x = element, 
                 xlabel = f'{xlabel}', 
                ) 
     
@@ -156,12 +158,70 @@ def base(
         else:
             args['title'] = f"{label} distributions across all filters\n {start_time}-{end_time}"    
     
+    
+    cols = df["filter"].unique()
+
     if plot_type == "BOX":
-        return BoxPlot(**args)
+        if filters:
+            
+
+            data = []
+            
+            for col in cols:
+                data.append(df[df["filter"] == col][element])
+            
+            plot_template = BoxPlot(**args, data = data)
+            
+            for i, patch in enumerate(plot_template.plot['boxes']):
+                patch.set(facecolor = COLOR_SCHEME[cols[i]])
+
+            for median in plot_template.plot['medians']:
+                median.set_color('black')
+                
+            plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
+        else:
+            plot_template = BoxPlot(**args, data = df)
+            
+            for median in plot_template.plot['medians']:
+                median.set_color('black')
+                
+            for patch in plot_template.plot['boxes']:
+                patch.set(facecolor="#3CAE3F") # customise
+             
+        return plot_template
+    
     elif plot_type == "VIOLIN":
-        return ViolinPlot(**args)
+        if filters:
+            data = []
+            for col in cols:
+                data.append(df[df["filter"] == col][element])
+            
+            plot_template = ViolinPlot(**args, data = data)
+
+            plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
+            
+            for i, pc in enumerate(plot_template.plot['bodies']):
+                pc.set_facecolor(COLOR_SCHEME[cols[i]])
+                pc.set_edgecolor('black')
+         
+        else:
+            plot_template = ViolinPlot(**args, data = df)
+            for pc in plot_template.plot['bodies']:
+                pc.set_edgecolor("black") # add custom color here
+            plot_template.ax.set_yticks([1], [''])
+
+            
+        for partname in ('cbars','cmins','cmaxes'):
+            vp = plot_template.plot[partname]
+            vp.set_edgecolor("black")
+            vp.set_linewidth(1)
+        
+        return plot_template
+    
     else:
         return BoxenPlot(**args)
+        
+        
     
 def eccentricity(filters: Optional[list] = None,
                  min_e: float = None, max_e : float = None,
