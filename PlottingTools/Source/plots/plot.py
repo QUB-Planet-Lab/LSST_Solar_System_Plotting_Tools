@@ -74,7 +74,12 @@ class Plot():
                 text_box, prop=dict(size=15), frameon=True, loc='upper right')
             at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
             self.ax.add_artist(at)
-            
+    
+    def replot(**kwargs):
+        for kwarg in kwargs:
+            print(kwarg, kwargs[kwarg])
+            ## add replot function, takes any of the columns from the dataframe and filters them to provide a new plot that maintains the old plot.
+    
     def save(self, file_name : str, extension : Literal['png', 'jpeg', 'pdf'] = 'png'):
         if self.context:
             self.context
