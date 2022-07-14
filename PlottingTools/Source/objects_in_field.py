@@ -6,7 +6,7 @@ Plots of objects either heliocentric or topocentric views
 
 from database import db
 from database.schemas import diasource, mpcorb, ssobjects, sssource
-from database.validators import validate_times, validate_filters
+from database.validators import validate_times, validate_filters, validate_orbital_elements
 from database.format_time import format_times
 
 from plots import Plot, ScatterPlot
@@ -25,21 +25,20 @@ def objects_in_field(
     mpcdesignation: Optional[str] = None,
     ssobjectid: Optional[int] = None,
     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
-    projection: Optional[Literal['2d', '3d']] = '2d'
+    projection: Optional[Literal['2d', '3d']] = '2d',
+    **orbital_elements
 ):
     
     start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
     cols = [
             diasource.c['filter'],
             diasource.c['midpointtai'], 
-            sssource.c['topocentricx'],
-            sssource.c['topocentricy'],
-            sssource.c['topocentricz'],
+            sssource.c['heliocentricx'],
+            sssource.c['heliocentricy'],
+            sssource.c['heliocentricz'],
            ]
     
     conditions = []
-    
-    
     
     
     if filters:
@@ -66,7 +65,40 @@ def objects_in_field(
     
     if projection:
         projection = projection.lower()
+    
         
+    min_a, max_a, min_incl, max_incl, min_peri, max_peri, min_e, max_e = validate_orbital_elements(**orbital_elements)
+    
+    if min_peri:
+        conditions.append(mpcorb.c['peri'] >= min_peri)
+        
+    if max_peri:
+        conditions.append(mpcorb.c['peri'] <= max_peri)
+        
+    if min_incl:
+        conditions.append(mpcorb.c['incl'] >= min_incl)
+    
+    if max_incl:
+        conditions.append(mpcorb.c['incl'] <= max_incl)
+        
+    if min_a or max_a:
+        conditions.append(mpcorb.c['e'] > 0 )
+    
+        conditions.append(mpcorb.c['e'] < 1)
+    
+    elif not min_a and not max_a:
+        if min_e:
+            conditions.append(mpcorb.c['e'] >= min_e )
+        if max_e:
+            conditions.append(mpcorb.c['e'] <= min_e )
+                
+    if min_a:
+        conditions.append((mpcorb.c['peri'] / (1 - mpcorb.c['e']) ) >= min_a)
+    
+    if max_a:
+        conditions.append((mpcorb.c['peri'] / (1 - mpcorb.c['e']) ) <= max_a)
+        
+    
     
     stmt = select(*cols).join(mpcorb, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
 
@@ -94,34 +126,33 @@ def objects_in_field(
         
         print(query)
         return # Is this the best way to return no results?
-
-    
     
     if filters:
-        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="topocentricx", y = "topocentricy", z="topocentricz", projection = projection)
+        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz", projection = projection)
         for _filter in filters:
             df_filter = df[df['filter'] == _filter]
             
             if not df_filter.empty:
                 if projection == '2d':
-                    lc.ax.scatter(x = df_filter["topocentricx"], y = df_filter["topocentricy"], label=_filter,  c = COLOR_SCHEME[_filter])
+                    lc.ax.scatter(x = df_filter["heliocentricx"], y = df_filter["heliocentricy"], label=_filter,  c = COLOR_SCHEME[_filter])
         # add filter to plot
                 elif projection == '3d':
                     
-                    lc.ax.scatter(xs = df_filter["topocentricx"], ys = df_filter["topocentricy"], zs = df_filter["topocentricz"], label=_filter, c = COLOR_SCHEME[_filter])
+                    lc.ax.scatter(xs = df_filter["heliocentricx"], ys = df_filter["heliocentricy"], zs = df_filter["heliocentricz"], label=_filter, c = COLOR_SCHEME[_filter])
+                   
                     
         lc.ax.legend(loc="upper right")
                     
-          
-                        
-
     else:
         if projection == '2d':
-            lc = ScatterPlot(data = df, x = "topocentricx", y = "topocentricy", label=_filter)
+            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", label=_filter)
         elif projection == '3d':
-            lc = ScatterPlot(data = df, x = "topocentricx", y = "topocentricy", z = "topocentricz", projection = '3d')
+            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", z = "heliocentricz", projection = '3d')
         
-   
+
+
+    lc.ax.scatter(xs = [0], ys=[0], zs=[0], c="black")
+
 
     return lc
     
