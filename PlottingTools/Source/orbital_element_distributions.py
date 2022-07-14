@@ -1,12 +1,13 @@
 from plots.box import BoxPlot, BoxenPlot
 from plots.violin import ViolinPlot
+from plots.scatter import ScatterPlot
 from plots.symbols import DEGREE
 from plots.styles.filter_color_scheme import COLOR_SCHEME
 
 from database import db
 from database.schemas import DIASource, diasource, mpcorb
 from database.validators import validate_times, validate_filters,\
-    validate_perihelion, validate_inclination, validate_semi_major_axis
+    validate_perihelion, validate_inclination, validate_semi_major_axis, validate_orbital_elements
 from database.format_time import format_times
 
 import seaborn as sns
@@ -26,17 +27,93 @@ ELEMENTS = {'e' : {'label': 'Eccentricity','unit' : None},\
             'incl' : {'label' : 'Inclination', 'unit' : DEGREE}
            }
 
+
+def create_orbit_conditions(conditions : list = [], **orbital_elements):
+    
+    min_a, max_a, min_incl, max_incl, min_peri, max_peri, min_e, max_e = validate_orbital_elements(**orbital_elements)
+        
+    if min_peri:
+        conditions.append(mpcorb.c['peri'] >= min_peri)
+    if max_peri:
+        conditions.append(mpcorb.c['peri'] <= max_peri)
+        
+    if min_incl:
+        conditions.append(mpcorb.c['incl'] >= min_incl)
+    
+    if max_incl:
+        conditions.append(mpcorb.c['incl'] <= max_incl)
+        
+    if min_a or max_a:
+        conditions.append(mpcorb.c['e'] > 0 )
+        conditions.append(mpcorb.c['e'] < 1)
+    
+    elif not min_a and not max_a:
+        if min_e:
+            conditions.append(mpcorb.c['e'] >= min_e )
+        if max_e:
+            conditions.append(mpcorb.c['e'] <= min_e )
+                
+    if min_a:
+        conditions.append((mpcorb.c['peri'] / (1 - mpcorb.c['e']) ) >= min_a)
+    
+    if max_a:
+        conditions.append((mpcorb.c['peri'] / (1 - mpcorb.c['e']) ) <= max_a)
+    
+    return conditions
+    
+def orbital_relationships(
+    x : Literal["incl", "peri", "e", "a"],
+    y : Literal["incl", "peri", "e", "a"],
+    start_time : Optional[float] = None, end_time : Optional[float] = None,
+    title : Optional[str] = None,
+    **orbital_elements
+):
+    
+    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)    
+    
+    conditions = []
+    
+    if start_time:
+        conditions.append(diasource.c['midpointtai'] >= start_time)
+    
+    if end_time:
+        conditions.append(diasource.c['midpointtai'] <= end_time)
+    
+    
+    conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+    
+    if x == "a":
+        qx = (mpcorb.c['peri'] / (1 - mpcorb.c['e'])).label('a')
+    else:
+        qx = mpcorb.c[x]
+        
+    if y == "a":
+        qy = (mpcorb.c['peri'] / (1 - mpcorb.c['e'])).label('a')
+    else:
+        qy = mpcorb.c[y]
+        
+        
+        
+    df = db.query(
+        select(
+            func.distinct(mpcorb.c['ssobjectid']), qx , qy, diasource.c['filter']).join(
+            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
+        
+        ).where(
+                *conditions
+        )
+    )
+            
+    return ScatterPlot(data = df, x=x, y=y, xlabel=x, ylabel=y, title = title)
+
 def base(
          stmt,
          element, # e, incl, a, peri
          filters: Optional[list] = None,
-         min_e: float = 0, max_e : float = None,
-         min_peri: float = 0.0, max_peri : float = None,
-         min_a: float = 0.0, max_a : float = None,
-         min_incl: float = 0.0, max_incl: float = None,
          start_time : Optional[float] = None, end_time : Optional[float] = None,
          plot_type: Literal[PLOT_TYPES] = 'BOX',
          title : Optional[str] = None,
+         **orbital_elements
         ):
     
     plot_type = plot_type.upper()
@@ -60,41 +137,8 @@ def base(
         filters = validate_filters(list(set(filters)))
         conditions.append(diasource.c['filter'].in_(filters))
         
-    min_peri, max_peri = validate_perihelion(min_peri, max_peri)
-    min_incl, max_incl = validate_inclination(min_incl = min_incl, max_incl = max_incl)
-    min_a, max_a = validate_semi_major_axis(min_a, max_a)
-   
     
-    
-    if min_peri:
-        conditions.append(mpcorb.c['peri'] >= min_peri)
-    if max_peri:
-        conditions.append(mpcorb.c['peri'] <= max_peri)
-    
-    
-        
-    if min_incl:
-        conditions.append(mpcorb.c['incl'] >= min_incl)
-    
-    if max_incl:
-        conditions.append(mpcorb.c['incl'] <= max_incl)
-        
-    if min_a or max_a:
-        conditions.append(mpcorb.c['e'] > 0 )
-    
-        conditions.append(mpcorb.c['e'] < 1)
-    
-    elif not min_a and not max_a:
-        if min_e:
-            conditions.append(mpcorb.c['e'] >= min_e )
-        if max_e:
-            conditions.append(mpcorb.c['e'] <= min_e )
-                
-    if min_a:
-        conditions.append((mpcorb.c['peri'] / (1 - mpcorb.c['e']) ) >= min_a)
-    
-    if max_a:
-        conditions.append((mpcorb.c['peri'] / (1 - mpcorb.c['e']) ) <= max_a)
+    create_orbit_conditions(conditions = conditions, **orbital_elements)
         
         
     df = db.query(
@@ -219,54 +263,43 @@ def base(
         return plot_template
     
     else:
-        return BoxenPlot(**args)
+        return BoxenPlot(**args, data= df)
         
         
     
 def eccentricity(filters: Optional[list] = None,
-                 min_e: float = None, max_e : float = None,
-                 min_peri: float = 0.0, max_peri : float = None,
-                 min_a: float = 0.0, max_a : float = None,
-                 min_incl: float = 0.0, max_incl: float = None,
                  start_time : Optional[float] = None, end_time : Optional[float] = None,
                  plot_type: Literal[PLOT_TYPES] = 'BOX',
-                 title : Optional[str] = None
+                 title : Optional[str] = None,
+                 **orbital_elements
                 ):
     
     
     return base(
         filters = filters,
         start_time = start_time, end_time = end_time,
-        min_e = min_e, max_e = max_e,
-        min_a = min_a, max_a = max_a,
-        min_peri = min_peri, max_peri = max_peri,
-        min_incl = min_incl, max_incl = max_incl,
         plot_type = plot_type,
         title = title,
         element = 'e',
+        **orbital_elements,
         stmt = select(
             func.distinct(mpcorb.c['ssobjectid']), mpcorb.c['e'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+        
     )
         
     
 def perihelion(filters: Optional[list] = None,
-                 min_e: float = 0, max_e : float = None,
-                 min_peri: float = 0.0, max_peri : float = None,
-                 min_a: float = 0.0, max_a : float = None,
-                 min_incl: float = 0.0, max_incl: float = None,
-                 start_time : Optional[float] = None, end_time : Optional[float] = None,
-                 plot_type: Literal[PLOT_TYPES] = 'BOX',
-                 title : Optional[str] = None,
+               start_time : Optional[float] = None, end_time : Optional[float] = None,
+               plot_type: Literal[PLOT_TYPES] = 'BOX',
+               title : Optional[str] = None,
+               **orbital_elements,
                   ):
     
     return base(
         filters = filters,
         start_time = start_time, end_time = end_time,
-        min_e = min_e, max_e = max_e,
-        min_a = min_a, max_a = max_a,
-        min_peri = min_peri, max_peri = max_peri,
-        min_incl = min_incl, max_incl = max_incl,
+        **orbital_elements,
         plot_type = plot_type,
         title = title,
         element = 'peri',
@@ -276,22 +309,17 @@ def perihelion(filters: Optional[list] = None,
         
     
 def inclination(filters: Optional[list] = None,
-                 min_e: float = 0, max_e : float = None,
-                 min_peri: float = 0.0, max_peri : float = None,
-                 min_a: float = 0.0, max_a : float = None,
-                 min_incl: float = 0.0, max_incl: float = None,
-                 start_time : Optional[float] = None, end_time : Optional[float] = None,
-                 plot_type: Literal[PLOT_TYPES] = 'BOX',
-                 title : Optional[str] = None):
+                start_time : Optional[float] = None, end_time : Optional[float] = None,
+                plot_type: Literal[PLOT_TYPES] = 'BOX',
+                title : Optional[str] = None,
+                **orbital_elements
+               ):
     
     
     return base(
         filters = filters,
         start_time = start_time, end_time = end_time,
-        min_e = min_e, max_e = max_e,
-        min_a = min_a, max_a = max_a,
-        min_peri = min_peri, max_peri = max_peri,
-        min_incl = min_incl, max_incl = max_incl,
+        **orbital_elements,
         plot_type = plot_type,
         title = title,
         element = 'incl',
@@ -302,22 +330,16 @@ def inclination(filters: Optional[list] = None,
     
         
 def semi_major_axis(filters: Optional[list] = None,
-                 min_e: float = None, max_e : float = None,
-                 min_peri: float = 0.0, max_peri : float = None,
-                 min_a: float = 0.0, max_a : float = None,
-                 min_incl: float = 0.0, max_incl: float = None,
                  start_time : Optional[float] = None, end_time : Optional[float] = None,
                  plot_type: Literal[PLOT_TYPES] = 'BOX',
-                 title : Optional[str] = None
+                 title : Optional[str] = None,
+                 **orbital_elements
                 ):
     
     return base(
         filters = filters,
         start_time = start_time, end_time = end_time,
-        min_e = min_e, max_e = max_e,
-        min_a = min_a, max_a = max_a,
-        min_peri = min_peri, max_peri = max_peri,
-        min_incl = min_incl, max_incl = max_incl,
+        **orbital_elements,
         plot_type = plot_type,
         title = title,
         element = 'a',
