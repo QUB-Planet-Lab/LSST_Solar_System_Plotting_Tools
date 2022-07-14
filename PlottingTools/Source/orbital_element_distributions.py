@@ -10,6 +10,9 @@ from database.validators import validate_times, validate_filters,\
     validate_perihelion, validate_inclination, validate_semi_major_axis, validate_orbital_elements
 from database.format_time import format_times
 
+from database.conditions import create_orbit_conditions
+from database.empty_response import empty_response
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,39 +30,6 @@ ELEMENTS = {'e' : {'label': 'Eccentricity','unit' : None},\
             'incl' : {'label' : 'Inclination', 'unit' : DEGREE}
            }
 
-
-def create_orbit_conditions(conditions : list = [], **orbital_elements):
-    
-    min_a, max_a, min_incl, max_incl, min_peri, max_peri, min_e, max_e = validate_orbital_elements(**orbital_elements)
-        
-    if min_peri:
-        conditions.append(mpcorb.c['peri'] >= min_peri)
-    if max_peri:
-        conditions.append(mpcorb.c['peri'] <= max_peri)
-        
-    if min_incl:
-        conditions.append(mpcorb.c['incl'] >= min_incl)
-    
-    if max_incl:
-        conditions.append(mpcorb.c['incl'] <= max_incl)
-        
-    if min_a or max_a:
-        conditions.append(mpcorb.c['e'] > 0 )
-        conditions.append(mpcorb.c['e'] < 1)
-    
-    elif not min_a and not max_a:
-        if min_e:
-            conditions.append(mpcorb.c['e'] >= min_e )
-        if max_e:
-            conditions.append(mpcorb.c['e'] <= min_e )
-                
-    if min_a:
-        conditions.append((mpcorb.c['peri'] / (1 - mpcorb.c['e']) ) >= min_a)
-    
-    if max_a:
-        conditions.append((mpcorb.c['peri'] / (1 - mpcorb.c['e']) ) <= max_a)
-    
-    return conditions
     
 def orbital_relationships(
     x : Literal["incl", "peri", "e", "a"],
@@ -147,33 +117,12 @@ def base(
         ) 
    )
     if df.empty:
-        query = f"""No results returned for your query:\n"""
-        if filters:
-            query += f"filters : {filters}\n"
-        if start_time:
-            query += f"start_time : {start_time}\n"
-        if end_time:
-            query += f"end_time : {end_time}\n"
-        if min_e:
-            query += f"min_e : {min_e}\n"
-        if max_e:
-            query += f"max_e : {max_e}\n"
-        if min_a:
-            query += f"min_a : {min_a}\n"
-        if max_a:
-            query += f"max_a : {max_a}\n"
-        if min_incl:
-            query += f"min_incl : {min_incl}\n"
-        if max_incl:
-            query += f"max_incl : {max_incl}\n"
-        if min_peri:
-            query += f"min_peri : {min_peri}\n"
-        if max_peri:
-            query += f"max_peri : {max_peri}\n"
-        
-        query = query[0:-1]
-        print(query)
-        return 
+        return empty_response(
+            filters = filters,
+            start_time = start_time,
+            end_time = end_time,
+            **orbital_elements
+        )
 
     
     start_time, end_time = format_times([start_time, end_time], _format="ISO")
