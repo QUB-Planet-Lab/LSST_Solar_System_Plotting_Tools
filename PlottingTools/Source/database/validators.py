@@ -36,7 +36,7 @@ def validate_perihelion(min_peri: float, max_peri: float):
         
     return min_peri, max_peri
 
-def validate_inclination(min_incl: float, max_incl:float):
+def validate_inclination(min_incl: float = None, max_incl:float = None):
     if (min_incl and min_incl < 0) or (max_incl and max_incl  < 0):
         raise Exception(f"max_incl and min_incl must be greater than 0 degrees and less than 180 degrees")
     
@@ -49,10 +49,32 @@ def validate_inclination(min_incl: float, max_incl:float):
     return min_incl, max_incl
         
     
-def validate_semi_major_axis(min_a : float, max_a:float):
+def validate_semi_major_axis(min_a : float = None, max_a:float = None):
     if (min_a and min_a < 0) or (max_a and max_a < 0):
         raise Exception("min_a and max_a must be greater than 0")
     if (min_a and max_a) and min_a > max_a:
         raise Exception("max_a must be greater than min_a")
         
     return min_a, max_a
+
+
+elements = ['min_a', 'max_a', 'min_e', 'max_e', 'min_peri', 'max_peri', 'min_incl', 'max_incl']
+
+def validate_orbital_elements(**kwargs):
+    for kwarg in kwargs:
+        if kwarg not in elements:
+            raise Exception(f"{kwarg} not a valid orbital_element argument. Valid arguments include {elements}")
+    min_a, max_a = validate_semi_major_axis(
+        min_a = kwargs['min_a'] if 'min_a' in kwargs else None, 
+        max_a = kwargs['max_a'] if 'max_a' in kwargs else None
+    )    
+    min_incl, max_incl = validate_inclination(
+        min_incl = kwargs['min_incl'] if 'min_incl' in kwargs else None, 
+        max_incl = kwargs['max_incl'] if 'max_incl' in kwargs else None
+    )
+    min_peri, max_peri = validate_perihelion(
+        min_peri = kwargs['min_peri'] if 'min_peri' in kwargs else None,
+        max_peri = kwargs['max_peri'] if 'max_peri' in kwargs else None
+    )
+    min_e, max_e = kwargs['min_a'] if 'min_a' in kwargs else None, kwargs['max_a'] if 'max_a' in kwargs else None
+    return min_a, max_a, min_incl, max_incl, min_peri, max_peri, min_e, max_e
