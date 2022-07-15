@@ -1,6 +1,7 @@
 from plots.box import BoxPlot, BoxenPlot
 from plots.violin import ViolinPlot
 from plots.scatter import ScatterPlot
+from plots.histogram import HistogramPlot
 from plots.symbols import DEGREE
 from plots.styles.filter_color_scheme import COLOR_SCHEME
 
@@ -36,11 +37,14 @@ def orbital_relationships(
     y : Literal["incl", "peri", "e", "a"],
     start_time : Optional[float] = None, end_time : Optional[float] = None,
     title : Optional[str] = None,
+    plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
     **orbital_elements
 ):
     
     start_time, end_time = validate_times(start_time = start_time, end_time = end_time)    
     
+    if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
+        raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
     conditions = []
     
     if start_time:
@@ -73,9 +77,26 @@ def orbital_relationships(
                 *conditions
         )
     )
-            
-    return ScatterPlot(data = df, x=x, y=y, xlabel=x, ylabel=y, title = title)
+    if df.empty:
+        return empty_response(
+                start_time = start_time,
+                end_time = end_time,
+                **orbital_elements
+            )
 
+    if plot_type == "scatter":
+        return ScatterPlot(data = df, x=x, y=y, xlabel=x, ylabel=y, title = title)
+    
+    if plot_type == "2d_hex":
+        hp = HistogramPlot(data = df, x = x, y = y, projection="2d_hex")
+        
+        return hp
+    
+    if plot_type == "2d_hist":
+        hp = HistogramPlot(data = df, x = x, y = y, projection="2d")
+       
+        return hp
+    
 def base(
          stmt,
          element, # e, incl, a, peri
