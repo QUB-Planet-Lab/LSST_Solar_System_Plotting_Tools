@@ -27,14 +27,14 @@ PLOT_TYPES = ['BOX', 'BOXEN', 'VIOLIN']
 
 ELEMENTS = {'e' : {'label': 'Eccentricity','unit' : None},\
             'a' : {'label': 'Semi-Major axis', 'unit': 'au'},\
-            'peri' : {'label': 'Perihelion', 'unit': 'au'}, \
+            'q' : {'label': 'Perihelion', 'unit': 'au'}, \
             'incl' : {'label' : 'Inclination', 'unit' : DEGREE}
            }
 
     
 def orbital_relationships(
-    x : Literal["incl", "peri", "e", "a"],
-    y : Literal["incl", "peri", "e", "a"],
+    x : Literal["incl", "q", "e", "a"],
+    y : Literal["incl", "q", "e", "a"],
     start_time : Optional[float] = None, end_time : Optional[float] = None,
     title : Optional[str] = None,
     plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
@@ -57,12 +57,12 @@ def orbital_relationships(
     conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
     
     if x == "a":
-        qx = (mpcorb.c['peri'] / (1 - mpcorb.c['e'])).label('a')
+        qx = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
     else:
         qx = mpcorb.c[x]
         
     if y == "a":
-        qy = (mpcorb.c['peri'] / (1 - mpcorb.c['e'])).label('a')
+        qy = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
     else:
         qy = mpcorb.c[y]
         
@@ -99,7 +99,7 @@ def orbital_relationships(
     
 def base(
          stmt,
-         element, # e, incl, a, peri
+         element, # e, incl, a, q
          filters: Optional[list] = None,
          start_time : Optional[float] = None, end_time : Optional[float] = None,
          plot_type: Literal[PLOT_TYPES] = 'BOX',

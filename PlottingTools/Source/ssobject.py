@@ -17,10 +17,9 @@ class Object():
         self.ssobjectid = ssobjectid
         self.mpcdesignation = mpcdesignation
         
-        stmt = select(mpcorb.c["e"], mpcorb.c["q"], mpcorb.c["peri"],# (mpcorb.c['peri'] / (1 - mpcorb.c['e'])).label('a'),
+        stmt = select(mpcorb.c["e"], mpcorb.c["q"], mpcorb.c["peri"],# 
                    mpcorb.c["incl"], mpcorb.c["node"],
                    mpcorb.c["n"], mpcorb.c["epoch"], #mpcorb.c["m"]
-                   #(((1 + mpcorb.c['e'])/(1 - mpcorb.c['e'])) * mpcorb.c['q']).label("Q")
                   )
         
         if self.mpcdesignation:
