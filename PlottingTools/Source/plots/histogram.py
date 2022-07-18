@@ -1,6 +1,8 @@
 from .plot import Plot
 
 import matplotlib.pyplot as plt
+from matplotlib.cm import ScalarMappable
+
 from typing import Optional, Literal
 
 #add 2d histogram here
@@ -64,4 +66,6 @@ class HistogramPlot(Plot):
 
             ax_histx.hist(data[x])
             ax_histy.hist(data[y], orientation='horizontal')
+            
+            #self.fig.colorbar(ScalarMappable(), ax = self.ax)
             
