@@ -7,6 +7,11 @@ from typing import Optional, Literal
 
 from sqlalchemy import select
 from database.schemas import mpcorb
+from math import cos, sqrt
+from typing import Optional
+
+import requests
+import pandas as pd
 
 class Object():
     def __init__(self, ssobjectid: Optional[str] = None, mpcdesignation: Optional[str] = None): # diasourceid?
@@ -16,6 +21,9 @@ class Object():
         
         self.ssobjectid = ssobjectid
         self.mpcdesignation = mpcdesignation
+        
+        
+        self.T_J = None
         
         stmt = select(mpcorb.c["e"], mpcorb.c["q"], mpcorb.c["peri"],# 
                    mpcorb.c["incl"], mpcorb.c["node"],
@@ -50,7 +58,36 @@ class Object():
         except:
             self.orbital_parameters["Q"] = None
         
+    @property
+    def tisserand(self):
+        if not self.T_J:
+            a_J = 5.2038 # au
+            if self.orbital_parameters['e'][0] < 1:
+
+                self.T_J = a_J / self.orbital_parameters['a'][0] + 2 * cos(self.orbital_parameters['incl'][0]) * sqrt(self.orbital_parameters['a'][0] / a_J * (1 - self.orbital_parameters['e'][0]**2))
+
+                return self.T_J
+            else:
+                print("Tisserand parameter is undefined for this object")
+                return
+        else:
+            return self.T_J
+    
+    
+    def find_jpl_matches(self, limit : Optional[int] = 20):
+        t_j = round(self.tisserand, 3)
         
+        
+        query = '{"t_jup":%s}'%(str(t_j))
+        #other parameters?
+        
+       
+        resp = requests.get(f'https://www.asterank.com/api/asterank?query={query}&limit={limit}').json()
+        
+        df = pd.DataFrame.from_records(resp)
+
+        return df
+    
     @property
     def classification(self):
         #get from JPL

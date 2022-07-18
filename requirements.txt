@@ -13,3 +13,4 @@ plotly
 matplotlib
 psycopg2 
 SQLAlchemy
+requests
