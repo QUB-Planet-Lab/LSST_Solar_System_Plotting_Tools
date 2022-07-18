@@ -17,7 +17,7 @@ from sbpy.photometry import HG
 
 
 
-def phase_curve(filters: Optional[list] = None,
+def _phase_curve(filters: Optional[list] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
                 mpcdesignation: Optional[str] = None,

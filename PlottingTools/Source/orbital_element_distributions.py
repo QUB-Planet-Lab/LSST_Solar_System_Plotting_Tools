@@ -178,7 +178,6 @@ def base(
     if plot_type == "BOX":
         if filters:
             
-
             data = []
             
             for col in cols:

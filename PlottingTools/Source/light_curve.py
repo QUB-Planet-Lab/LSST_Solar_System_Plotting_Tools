@@ -17,7 +17,7 @@ from plots.styles.filter_color_scheme import COLOR_SCHEME
 
 
 
-def light_curve(filters: Optional[list] = None,
+def _light_curve(filters: Optional[list] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
                 mpcdesignation: Optional[str] = None,

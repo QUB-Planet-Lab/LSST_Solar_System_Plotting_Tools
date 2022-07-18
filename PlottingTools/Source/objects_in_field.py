@@ -145,13 +145,14 @@ def objects_in_field(
                     
     else:
         if projection == '2d':
-            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", label=_filter)
+            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy")
+            lc.ax.scatter(x = [0], y = [0], c = "black")
+
+
         elif projection == '3d':
             lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", z = "heliocentricz", projection = '3d')
-        
+            lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black")
 
-
-    lc.ax.scatter(xs = [0], ys=[0], zs=[0], c="black")
 
 
     return lc
