@@ -20,8 +20,9 @@ import numpy as np
 
 from typing import Optional, Literal
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, distinct
 
+from math import cos, sqrt
 
 PLOT_TYPES = ['BOX', 'BOXEN', 'VIOLIN']
 
@@ -31,8 +32,70 @@ ELEMENTS = {'e' : {'label': 'Eccentricity','unit' : None},\
             'incl' : {'label' : 'Inclination', 'unit' : DEGREE}
            }
 
+def _tisserand_relations(
+    y : Literal["incl", "q", "e", "a"],
+    start_time : Optional[float] = None, end_time : Optional[float] = None,
+    title : Optional[str] = None,
+    plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
+    **orbital_elements
+):
+    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)    
     
-def orbital_relationships(
+    if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
+        raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
+    conditions = []
+    
+    if start_time:
+        conditions.append(diasource.c['midpointtai'] >= start_time)
+    
+    if end_time:
+        conditions.append(diasource.c['midpointtai'] <= end_time)
+    
+    
+    conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+       
+    if y == "a":
+        qy = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
+    else:
+        qy = mpcorb.c[y]
+        
+        
+    a_J = 5.2038 # au
+    
+    tisserand = (a_J / (mpcorb.c['q'] / (1 - mpcorb.c['e'])) + 2 * func.cos(mpcorb.c['incl']) * func.sqrt((mpcorb.c['q'] / (1 - mpcorb.c['e'])) / a_J * (1 - func.power(mpcorb.c['e'], 2)))).label("tisserand")
+        
+    
+    df = db.query(
+        select(
+            distinct(mpcorb.c['ssobjectid']), qy, tisserand,
+            diasource.c['filter']).join(
+            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
+        
+        ).where(
+                *conditions
+        )
+    )
+    if df.empty:
+        return empty_response(
+                start_time = start_time,
+                end_time = end_time,
+                **orbital_elements
+            )
+    
+    if plot_type == "scatter":
+        return ScatterPlot(data = df, x="tisserand", y=y, xlabel="tisserand", ylabel=y, title = title)
+    
+    if plot_type == "2d_hex":
+        hp = HistogramPlot(data = df, x = "tisserand", y = y, projection="2d_hex")
+        
+        return hp
+    
+    if plot_type == "2d_hist":
+        hp = HistogramPlot(data = df, x = "tisserand", y = y, projection="2d")
+       
+        return hp
+
+def _orbital_relations(
     x : Literal["incl", "q", "e", "a"],
     y : Literal["incl", "q", "e", "a"],
     start_time : Optional[float] = None, end_time : Optional[float] = None,
@@ -70,7 +133,7 @@ def orbital_relationships(
         
     df = db.query(
         select(
-            func.distinct(mpcorb.c['ssobjectid']), qx , qy, diasource.c['filter']).join(
+            distinct(mpcorb.c['ssobjectid']), qx , qy, diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
         
         ).where(
@@ -193,14 +256,23 @@ def base(
                 
             plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
         else:
+            
             plot_template = BoxPlot(**args, data = df)
+            
             
             for median in plot_template.plot['medians']:
                 median.set_color('black')
                 
             for patch in plot_template.plot['boxes']:
-                patch.set(facecolor="#3CAE3F") # customise
-             
+                if element == "e":
+                    patch.set(facecolor="#3CAE3F")
+                if element == "q":
+                    patch.set(facecolor="#FFE266")
+                if element == "incl":
+                    patch.set(facecolor="#ED4C4C")
+                if element == "a":
+                    patch.set(facecolor="#1C81A4")
+     
         return plot_template
     
     elif plot_type == "VIOLIN":
@@ -252,9 +324,8 @@ def eccentricity(filters: Optional[list] = None,
         element = 'e',
         **orbital_elements,
         stmt = select(
-            func.distinct(mpcorb.c['ssobjectid']), mpcorb.c['e'], diasource.c['filter']).join(
+            distinct(mpcorb.c['ssobjectid']), mpcorb.c['e'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
-        
     )
         
     
@@ -272,7 +343,7 @@ def perihelion(filters: Optional[list] = None,
         plot_type = plot_type,
         title = title,
         element = 'peri',
-        stmt = select(func.distinct(mpcorb.c['ssobjectid']), mpcorb.c['peri'], diasource.c['filter']).join(
+        stmt = select(distinct(mpcorb.c['ssobjectid']), mpcorb.c['peri'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
         
@@ -292,7 +363,7 @@ def inclination(filters: Optional[list] = None,
         plot_type = plot_type,
         title = title,
         element = 'incl',
-        stmt = select(func.distinct(mpcorb.c['ssobjectid']),mpcorb.c['incl'], diasource.c['filter']).join(
+        stmt = select(distinct(mpcorb.c['ssobjectid']),mpcorb.c['incl'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
 
@@ -312,7 +383,7 @@ def semi_major_axis(filters: Optional[list] = None,
         plot_type = plot_type,
         title = title,
         element = 'a',
-        stmt = select(func.distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['peri'], (mpcorb.c['peri'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
+        stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['peri'], (mpcorb.c['peri'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
 

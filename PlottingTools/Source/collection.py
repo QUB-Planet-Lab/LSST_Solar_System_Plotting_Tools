@@ -1,7 +1,8 @@
 from database import db
 from database.validators import validate_orbital_elements
 
-from orbital_element_distributions import orbital_relationships, eccentricity, perihelion, semi_major_axis, inclination
+from orbital_element_distributions import _orbital_relations, eccentricity, perihelion, semi_major_axis, inclination, _tisserand_relations
+#change to relations
 
 from objects_in_field import objects_in_field
 
@@ -14,8 +15,7 @@ PLOT_TYPES = ['BOX', 'BOXEN', 'VIOLIN']
 ORB_PARAMS = ["eccentricity", "perihelion", "semi_major_axis", "inclination"]
 
 class Collection():
-    def __init__(self, **orbital_elements): # cool if codes used i.e. NEO, NEA,
-        # specify orbit parameters, timeframes etc.
+    def __init__(self, **orbital_elements):
         
         self.min_a, self.max_a, self.min_incl, self.max_incl, self.min_peri, self.max_peri, self.min_e, self.max_e = validate_orbital_elements(**orbital_elements)
         
@@ -37,6 +37,8 @@ class Collection():
             min_e = self.min_e, 
             max_e = self.max_e
         )
+    
+    #add _orbital_relations
     
     def plot_objects(self,
                     filters: Optional[list] = None,
@@ -64,7 +66,28 @@ class Collection():
             min_e = self.min_e, 
             max_e = self.max_e
         )
+    
+    def tisserand_relations(self,
+                            y : Literal["incl", "q", "e", "a"],
+                            start_time : Optional[float] = None, end_time : Optional[float] = None,
+                            title : Optional[str] = None,
+                            plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
+                           ):
+        tr = _tisserand_relations(y = y,  start_time = start_time, end_time = end_time, 
+                                  title = title, plot_type = plot_type, min_a = self.min_a, 
+                                    max_a = self.max_a,
+                                    min_incl = self.min_incl,
+                                    max_incl = self.max_incl,
+                                    min_peri = self.min_peri, 
+                                    max_peri = self.max_peri, 
+                                    min_e = self.min_e, 
+                                    max_e = self.max_e)
         
+        tr.ax.set_xlim(left = tr.data["tisserand"].min(), right = tr.data["tisserand"].max())
+        print(tr.data[y].min(), tr.data[y].max())
+        tr.ax.set_ylim(bottom =  tr.data[y].min(), top = tr.data[y].max())
+        return tr
+
     def orbital_param_distribution(self,
                                     parameter : Literal[ORB_PARAMS],
                                     filters: Optional[list] = None,
@@ -110,7 +133,7 @@ class Collection():
             return perihelion(
                 **args
             )
-            
+        
         #getter setter for __init__ that calls functions and updates plots
     
     

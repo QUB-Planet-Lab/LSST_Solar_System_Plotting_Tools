@@ -23,7 +23,7 @@ from database.validators import validate_times
 from database.format_time import format_times
 from database.conditions import create_orbit_conditions
 
-from sqlalchemy import select, func, distinct
+from sqlalchemy import select, func
 
 
 import math
