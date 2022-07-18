@@ -15,7 +15,7 @@ from DataAccessLayer import create_connection_and_queryDB
 from matplotlib import pyplot as plt
 from plots.scatter import ScatterPlot
 from plots.histogram import HistogramPlot
-from plots.symbols import DEGREE, LAMBDA
+from plots.symbols import DEGREE, LAMBDA, BETA
 
 from database import db
 from database.schemas import diasource, mpcorb, ssobjects, sssource
@@ -45,7 +45,7 @@ def object_detections(start: float, end: float):
     df = create_connection_and_queryDB(query, dict(start=start, end=end)) # MJD
 
 
-    return ScatterPlot(data = df, x = "ra", y = "decl", xlabel=f"R.A. ({degree})", ylabel=f"Dec ({DEGREE})", title=f"Observations during the period {start}-{end}")
+    return ScatterPlot(data = df, x = "ra", y = "decl", xlabel=f"R.A. ({DEGREE})", ylabel=f"Dec ({DEGREE})", title=f"Observations during the period {start}-{end}")
 
 def ccd_visit(ccd_visit_id : int):
     query = """
@@ -60,7 +60,7 @@ def ccd_visit(ccd_visit_id : int):
     
     df = create_connection_and_queryDB(query, dict(ccd_visit_id = ccd_visit_id))
     
-    return ScatterPlot(data = df, x = "lat", y = "lon", xlabel=f"Eccliptic {beta} ({degree})", ylabel=f"Eccliptic {LAMBDA} ({DEGREE})", title=f"CCD visit id {ccd_visit_id}")
+    return ScatterPlot(data = df, x = "lat", y = "lon", xlabel=f"Eccliptic {BETA} ({DEGREE})", ylabel=f"Eccliptic {LAMBDA} ({DEGREE})", title=f"CCD visit id {ccd_visit_id}")
 
 def _detection_distributions(
     start_time : float, end_time : float,
