@@ -108,6 +108,7 @@ def _orbital_relations(
     y : Literal["incl", "q", "e", "a"],
     start_time : Optional[float] = None, end_time : Optional[float] = None,
     title : Optional[str] = None,
+    colorbar: bool = True,
     plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
     **orbital_elements
 ):
@@ -160,7 +161,7 @@ def _orbital_relations(
     
     if plot_type == "2d_hex":
         
-        hp = HistogramPlot(data = df, x = x, y = y, projection="2d_hex")
+        hp = HistogramPlot(data = df, x = x, y = y, projection="2d_hex",  colorbar = colorbar)
         hp.ax.set_title(title if title else f"{x} - {y}")
         hp.ax.set_xlabel(ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '')
         hp.ax.set_ylabel(ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
@@ -168,7 +169,7 @@ def _orbital_relations(
         return hp
     
     if plot_type == "2d_hist":
-        hp = HistogramPlot(data = df, x = x, y = y, projection="2d")
+        hp = HistogramPlot(data = df, x = x, y = y, projection="2d", colorbar = colorbar)
         
         hp.ax.set_title(title if title else f"{x} - {y}")
         hp.ax.set_xlabel(ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '')

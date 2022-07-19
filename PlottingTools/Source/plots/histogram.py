@@ -15,7 +15,7 @@ def chart(x, y, ax, ax_histx, ax_histy):
     
     
 class HistogramPlot(Plot):
-    def __init__(self, data, x, y: Optional[str] = None,xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection : Literal['1d', '2d', '2d_hex'] = '1d'):
+    def __init__(self, data, x, y: Optional[str] = None,xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection : Literal['1d', '2d', '2d_hex'] = '1d', colorbar : bool = True):
         super().__init__(data, xlabel, ylabel, title, rc_params)
         
         if projection == '1d':
@@ -24,7 +24,7 @@ class HistogramPlot(Plot):
         if projection == '2d':
             if not y:
                 raise Exception("Y values must be provided when using a 2d histogram")
-            #self.plot = self.ax.hist2d(x = data[x], y=data[y])
+
             # TO-DO create dynamic sizing of plots
             self.fig.clear()
             self.fig = plt.figure(figsize=(8, 8))
@@ -41,9 +41,20 @@ class HistogramPlot(Plot):
 
     
             self.ax.hist2d(data[x], data[y])
+            
+            ax_histx.hist(data[x], edgecolor="white", color="black")
+            ax_histx.spines.top.set_visible(False)
+            ax_histx.spines.right.set_visible(False)
+            
+            ax_histx.set_ylabel("Count")
 
-            ax_histx.hist(data[x])
-            ax_histy.hist(data[y], orientation='horizontal')
+            ax_histy.hist(data[y], edgecolor="white", color="black", orientation='horizontal')
+            
+            
+            ax_histy.spines.top.set_visible(False)
+            ax_histy.spines.right.set_visible(False)
+            
+            ax_histy.set_xlabel("Count")
             
         if projection == '2d_hex':
             if not y:
@@ -57,6 +68,10 @@ class HistogramPlot(Plot):
                       wspace=0.05, hspace=0.05
             )
             self.ax = self.fig.add_subplot(gs[1, 0])
+            
+            if colorbar:
+                self.fig.colorbar(ScalarMappable(), ax = self.ax, pad=0.01)
+                
             ax_histx = self.fig.add_subplot(gs[0,0], sharex=self.ax)
             ax_histy = self.fig.add_subplot(gs[1,1], sharey=self.ax)
             ax_histx.tick_params(axis="x", labelbottom=False)
@@ -65,8 +80,20 @@ class HistogramPlot(Plot):
     
             self.ax.hexbin(data[x], data[y])
 
-            ax_histx.hist(data[x])
-            ax_histy.hist(data[y], orientation='horizontal')
+            ax_histx.hist(data[x], edgecolor="white", color="black")
             
-            #self.fig.colorbar(ScalarMappable(), ax = self.ax)
+            ax_histx.spines.top.set_visible(False)
+            ax_histx.spines.right.set_visible(False)
             
+            ax_histx.set_ylabel("Count")
+            
+            ax_histy.hist(data[y], edgecolor="white", color="black", orientation='horizontal')
+            
+            
+            ax_histy.spines.top.set_visible(False)
+            ax_histy.spines.right.set_visible(False)
+            
+            ax_histy.set_xlabel("Count")
+            
+            
+                        

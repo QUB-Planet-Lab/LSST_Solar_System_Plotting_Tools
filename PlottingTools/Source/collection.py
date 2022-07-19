@@ -73,6 +73,7 @@ class Collection():
                          y : Literal["incl", "q", "e", "a"],
                          start_time : Optional[float] = None, end_time : Optional[float] = None,
                          title : Optional[str] = None,
+                         colorbar: bool = True,
                          plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter"
                          ):
         
