@@ -57,13 +57,11 @@ class Object():
 
             self.mpcdesignation = self.orbital_parameters['mpcdesignation'][0].strip()
             
-        print(self.orbital_parameters['mpcnumber'], self.orbital_parameters['mpcdesignation'], self.orbital_parameters['fulldesignation'])
         
         self.orbital_parameters = self.orbital_parameters.drop(['mpcdesignation', 'ssobjectid', 'mpcnumber', 'fulldesignation'], axis=1)
         
         
         try:
-            # Need to add cometary and Keplarian classification here
             self.orbital_parameters["a"] = self.orbital_parameters["q"] / (1 - self.orbital_parameters["e"])
         except:
             self.orbital_parameters["a"] = None
