@@ -76,5 +76,6 @@ def validate_orbital_elements(**kwargs):
         min_peri = kwargs['min_peri'] if 'min_peri' in kwargs else None,
         max_peri = kwargs['max_peri'] if 'max_peri' in kwargs else None
     )
-    min_e, max_e = kwargs['min_a'] if 'min_a' in kwargs else None, kwargs['max_a'] if 'max_a' in kwargs else None
+    min_e, max_e = kwargs['min_e'] if 'min_e' in kwargs else None, kwargs['max_e'] if 'max_e' in kwargs else None
+    
     return min_a, max_a, min_incl, max_incl, min_peri, max_peri, min_e, max_e

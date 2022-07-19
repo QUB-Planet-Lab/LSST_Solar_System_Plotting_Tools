@@ -18,7 +18,7 @@ def create_orbit_conditions(conditions : list = [], **orbital_elements):
         conditions.append(mpcorb.c['incl'] <= max_incl)
         
     if min_a or max_a:
-        if min_e >= 1 or max_e >= 1:
+        if (min_e and min_e >= 1) or (max_e and max_e >= 1):
             raise Exception(f"You cannot define a body using the following orbital elements: {orbital_elements}.\n Eccentricty cannot be greater or equal to one for a given semi-major axis")
         conditions.append(mpcorb.c['e'] > 0 )
         conditions.append(mpcorb.c['e'] < 1)
