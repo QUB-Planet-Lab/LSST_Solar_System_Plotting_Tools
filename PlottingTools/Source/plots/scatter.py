@@ -21,6 +21,7 @@ class ScatterPlot(Plot):
             self.plot = self.ax.scatter(x = data[x], y = data[y])
             
         elif projection == '3d':
+            self.fig.clear()
             self.fig = plt.figure()
             self.ax = self.fig.add_subplot(projection="3d")
             self.plot = self.ax.scatter(xs = data[x], ys = data[y], zs = data[z])

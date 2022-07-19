@@ -30,6 +30,48 @@ import math
 
 from typing import Optional, Literal
 
+
+
+def _detection_distributions(
+    start_time : float, end_time : float,
+    title : Optional[str] = None,
+    #todo - timeframe : Literal["day", "monthly", "year"] = "day",
+    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
+    **orbital_elements
+):
+    
+    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+    
+    conditions = create_orbit_conditions(**orbital_elements)
+    
+
+    data = db.query(
+                select(diasource.c['midpointtai'], ).distinct(diasource.c['ssobjectid']).where(
+                    diasource.c['midpointtai'] >= start_time,
+                    diasource.c['midpointtai'] <= end_time
+                )
+            )
+     
+                
+    bins = [start_time + i for i in range(0, math.floor(end_time - start_time) + 1, 1)]
+    
+    
+    hp = HistogramPlot(data = data, x="midpointtai", xbins = bins)
+        
+    hp.ax.set(yscale="log")
+    hp.fig.suptitle(title if title else f"Detection distributions")
+    
+    hp.ax.set_xlabel("Date")
+    hp.ax.set_ylabel("No. of Detections")
+    
+    if time_format == "ISO":
+        hp.ax.set_xticks(ticks = bins, labels = [date[0:10] for date in format_times(bins, _format="ISO")])
+        
+        hp.fig.autofmt_xdate()
+        
+    return hp
+
+
 def object_detections(start: float, end: float):
     
     query = """
@@ -61,41 +103,6 @@ def ccd_visit(ccd_visit_id : int):
     df = create_connection_and_queryDB(query, dict(ccd_visit_id = ccd_visit_id))
     
     return ScatterPlot(data = df, x = "lat", y = "lon", xlabel=f"Eccliptic {BETA} ({DEGREE})", ylabel=f"Eccliptic {LAMBDA} ({DEGREE})", title=f"CCD visit id {ccd_visit_id}")
-
-def _detection_distributions(
-    start_time : float, end_time : float,
-    #timeframe : Literal["day", "year"] = "day",
-    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
-    **orbital_elements
-):
-    
-    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
-    
-    conditions = create_orbit_conditions(**orbital_elements)
-    
-
-    data = db.query(
-                select(diasource.c['midpointtai'], ).distinct(diasource.c['ssobjectid']).where(
-                    diasource.c['midpointtai'] >= start_time,
-                    diasource.c['midpointtai'] <= end_time
-                )
-            )
-     
-                
-    bins = [start_time + i for i in range(0, math.floor(end_time - start_time), 1)]
-    
-    
-    hp = HistogramPlot(data = data, x="midpointtai", xbins = bins)
-        
-    hp.ax.set(yscale="log")
-    
-    if time_format == "ISO":
-        hp.ax.set_xticks(ticks = bins, labels = [date[0:10] for date in format_times(bins, _format="ISO")])
-        
-        hp.fig.autofmt_xdate()
-        
-    return hp
-    
     
 
 

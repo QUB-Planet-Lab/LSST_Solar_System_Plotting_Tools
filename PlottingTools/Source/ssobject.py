@@ -19,22 +19,24 @@ class Object():
         
         #https://cneos.jpl.nasa.gov/about/neo_groups.html
         
-        self.ssobjectid = ssobjectid
+        
         self.mpcdesignation = mpcdesignation
+        
+        self.ssobjectid = str(ssobjectid) if ssobjectid else None
         
         
         self.T_J = None
         
         stmt = select(mpcorb.c["e"], mpcorb.c["q"], mpcorb.c["peri"],# 
                    mpcorb.c["incl"], mpcorb.c["node"],
-                   mpcorb.c["n"], mpcorb.c["epoch"], #mpcorb.c["m"]
+                   mpcorb.c["n"], mpcorb.c["epoch"], mpcorb.c['ssobjectid'], mpcorb.c['mpcdesignation'],  mpcorb.c['mpcnumber'], mpcorb.c['fulldesignation']  #mpcorb.c["m"]
                   )
         
-        if self.mpcdesignation:
-            stmt = stmt.where(mpcorb.c["mpcdesignation"] == self.mpcdesignation)
+        if mpcdesignation:
+            stmt = stmt.where(mpcorb.c["mpcdesignation"] == mpcdesignation)
         
-        elif self.ssobjectid:
-            stmt = stmt.where(mpcorb.c["ssobjectid"] == self.ssobjectid)
+        elif ssobjectid:
+            stmt = stmt.where(mpcorb.c["ssobjectid"] == ssobjectid)
         
         else:
             raise Exception("An mpcdesignation or a ssobjectid must be provided")
@@ -44,7 +46,22 @@ class Object():
         )
         
         if self.orbital_parameters.empty:
+            #add empty_response here.
             raise Exception("No results returned")
+        
+        if not self.ssobjectid:
+            
+            self.ssobjectid = str(self.orbital_parameters['ssobjectid'][0])
+        
+        if not self.ssobjectid:
+
+            self.mpcdesignation = self.orbital_parameters['mpcdesignation'][0].strip()
+            
+        print(self.orbital_parameters['mpcnumber'], self.orbital_parameters['mpcdesignation'], self.orbital_parameters['fulldesignation'])
+        
+        self.orbital_parameters = self.orbital_parameters.drop(['mpcdesignation', 'ssobjectid', 'mpcnumber', 'fulldesignation'], axis=1)
+        
+        
         try:
             # Need to add cometary and Keplarian classification here
             self.orbital_parameters["a"] = self.orbital_parameters["q"] / (1 - self.orbital_parameters["e"])
@@ -52,7 +69,6 @@ class Object():
             self.orbital_parameters["a"] = None
             
         try:
-            
             self.orbital_parameters["Q"] = self.orbital_parameters["q"] * ((1 + self.orbital_parameters["e"])/ (1 - self.orbital_parameters["e"]))
         
         except:
@@ -87,13 +103,29 @@ class Object():
         df = pd.DataFrame.from_records(resp)
 
         return df
-    
+    '''
+    # TODO
     @property
     def classification(self):
         #get from JPL
         #https://ssd-api.jpl.nasa.gov/doc/sb_ident.html
         # write call to JPL API
-        pass
+        
+        query = '{"ref":"%s"}'%(str(self.mpcdesignation))
+        print(f"http://asterank.com/api/mpc?query={query}&limit=1")
+        resp = requests.get(f"http://asterank.com/api/mpc?query={query}&limit=1").json()
+        print(resp)
+        prov_des = resp["prov_des"]
+
+        resp = requests.get(f"https://ssd-api.jpl.nasa.gov/sbdb.api?alt-des=1&alt-orbits=1&ca-data=1&ca-time=both&ca-tunc=both&cd-epoch=1&cd-tp=1&discovery=1&full-prec=1&nv-fmt=both&orbit-defs=1&phys-par=1&r-notes=1&r-observer=1&radar-obs=1&sat=1&sstr={prov_des}&utf8=1&vi-data=1&www=1").json()
+
+        if resp:
+                           print(resp["orbit"]["orbit_class"])
+        else:
+                           print("Cannot find the object given by ...")
+     '''       
+                            
+        
     
     def phase_curve(self, 
                     start_time: Optional[float] = None, 
@@ -122,6 +154,7 @@ class Object():
             ssobjectid = self.ssobjectid,
             filters = filters,
             start_time = start_time,
+            end_time = end_time,
             title = title,
             time_format = time_format
         )

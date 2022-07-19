@@ -83,16 +83,24 @@ def _tisserand_relations(
             )
     
     if plot_type == "scatter":
-        return ScatterPlot(data = df, x="tisserand", y=y, xlabel="tisserand", ylabel=y, title = title)
+        return ScatterPlot(data = df, x="tisserand", y=y, xlabel="Tisserand parameter", ylabel= ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title)
     
     if plot_type == "2d_hex":
         hp = HistogramPlot(data = df, x = "tisserand", y = y, projection="2d_hex")
+        
+        hp.ax.set_title(title if title else "Tisserand relations")
+        hp.ax.set_xlabel("Tisserand parameter")
+        hp.ax.set_ylabel(ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
         
         return hp
     
     if plot_type == "2d_hist":
         hp = HistogramPlot(data = df, x = "tisserand", y = y, projection="2d")
        
+        hp.ax.set_title(title if title else "Tisserand relations")
+        hp.ax.set_xlabel("Tisserand parameter")
+        hp.ax.set_ylabel(ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
+        
         return hp
 
 def _orbital_relations(
@@ -151,13 +159,21 @@ def _orbital_relations(
         return ScatterPlot(data = df, x=x, y=y, xlabel=x, ylabel=y, title = title)
     
     if plot_type == "2d_hex":
+        
         hp = HistogramPlot(data = df, x = x, y = y, projection="2d_hex")
+        hp.ax.set_title(title if title else f"{x} - {y}")
+        hp.ax.set_xlabel(ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '')
+        hp.ax.set_ylabel(ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
         
         return hp
     
     if plot_type == "2d_hist":
         hp = HistogramPlot(data = df, x = x, y = y, projection="2d")
-       
+        
+        hp.ax.set_title(title if title else f"{x} - {y}")
+        hp.ax.set_xlabel(ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '')
+        hp.ax.set_ylabel(ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
+        
         return hp
     
 def base(

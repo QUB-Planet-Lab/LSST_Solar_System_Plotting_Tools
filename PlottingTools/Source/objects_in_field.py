@@ -140,20 +140,29 @@ def objects_in_field(
                     
                     lc.ax.scatter(xs = df_filter["heliocentricx"], ys = df_filter["heliocentricy"], zs = df_filter["heliocentricz"], label=_filter, c = COLOR_SCHEME[_filter])
                    
-                    
+        lc.ax.set_xlabel("X (au)")
+        lc.ax.set_ylabel("Y (au)")
+        lc.ax.set_zlabel("Z (au)")
+        lc.ax.set_title(title if title else f"{mpcdesignation if mpcdesignation else ssobjectid if ssobjectid else ''} Orbit plot")            
         lc.ax.legend(loc="upper right")
                     
     else:
         if projection == '2d':
             lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy")
             lc.ax.scatter(x = [0], y = [0], c = "black")
-
+            lc.ax.set_xlabel("X (au)")
+            lc.ax.set_ylabel("Y (au)")    
+            lc.ax.set_title(title if title else f"{mpcdesignation if mpcdesignation else ssobjectid if ssobjectid else ''} Orbit plot")
+            
+            
 
         elif projection == '3d':
             lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", z = "heliocentricz", projection = '3d')
             lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black")
-
-
+            lc.ax.set_xlabel("X (au)")
+            lc.ax.set_ylabel("Y (au)")
+            lc.ax.set_zlabel("Z (au)")
+            lc.ax.set_title(title if title else f"{mpcdesignation if mpcdesignation else ssobjectid if ssobjectid else ''} Orbit plot")
 
     return lc
     

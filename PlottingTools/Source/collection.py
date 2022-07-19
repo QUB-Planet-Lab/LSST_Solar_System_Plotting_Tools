@@ -24,6 +24,7 @@ class Collection():
         # hex plots
         # fix for monthly and yearly
         
+        # not right, shows two bars when 3 days is requested. Bins at edges
         return _detection_distributions(
             start_time = start_time,
             end_time = end_time,
@@ -67,6 +68,23 @@ class Collection():
             max_e = self.max_e
         )
     
+    def orbital_relations(self,
+                         x : Literal["incl", "q", "e", "a"],
+                         y : Literal["incl", "q", "e", "a"],
+                         start_time : Optional[float] = None, end_time : Optional[float] = None,
+                         title : Optional[str] = None,
+                         plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter"
+                         ):
+        
+        return _orbital_relations(x = x, y = y, start_time = start_time, end_time = end_time,
+                                  plot_type = plot_type, title = title,
+                                  min_a = self.min_a, max_a = self.max_a, 
+                                  min_incl = self.min_incl, max_incl = self.max_incl, 
+                                  min_peri = self.min_peri, max_peri = self.max_peri, 
+                                  min_e = self.min_e, max_e = self.max_e
+                                 )
+                           
+    
     def tisserand_relations(self,
                             y : Literal["incl", "q", "e", "a"],
                             start_time : Optional[float] = None, end_time : Optional[float] = None,
@@ -84,7 +102,6 @@ class Collection():
                                     max_e = self.max_e)
         
         tr.ax.set_xlim(left = tr.data["tisserand"].min(), right = tr.data["tisserand"].max())
-        print(tr.data[y].min(), tr.data[y].max())
         tr.ax.set_ylim(bottom =  tr.data[y].min(), top = tr.data[y].max())
         return tr
 

@@ -26,6 +26,7 @@ class HistogramPlot(Plot):
                 raise Exception("Y values must be provided when using a 2d histogram")
             #self.plot = self.ax.hist2d(x = data[x], y=data[y])
             # TO-DO create dynamic sizing of plots
+            self.fig.clear()
             self.fig = plt.figure(figsize=(8, 8))
             gs = self.fig.add_gridspec(
                 2, 2,  width_ratios=(7, 2), height_ratios=(2, 7),
@@ -48,7 +49,7 @@ class HistogramPlot(Plot):
             if not y:
                 raise Exception("Y values must be provided when using a 2d histogram")
             #self.plot = self.ax.hexbin(x = data[x], y=data[y])
-            
+            self.fig.clear()
             self.fig = plt.figure(figsize=(8, 8))
             gs = self.fig.add_gridspec(
                 2, 2,  width_ratios=(7, 2), height_ratios=(2, 7),
