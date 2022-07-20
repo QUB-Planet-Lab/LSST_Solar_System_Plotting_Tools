@@ -9,6 +9,7 @@ from sqlalchemy import select
 from plots import ScatterPlot
 from plots.symbols import DEGREE
 from plots.styles.filter_color_scheme import COLOR_SCHEME
+from plots.styles.filter_symbols import FILTER_SYMBOLS
 
 import pandas as pd
 import numpy as np
@@ -100,7 +101,7 @@ def _phase_curve(filters: Optional[list] = None,
             df_filter = df[df['filter'] == _filter]
              
             if not df_filter.empty:
-                pc.ax.errorbar(data = df_filter , x = "phaseangle", y = "cmag", yerr=df_filter['magsigma'], label=_filter, fmt='o', c = COLOR_SCHEME[_filter])
+                pc.ax.errorbar(data = df_filter , x = "phaseangle", y = "cmag", yerr=df_filter['magsigma'], label=_filter, marker=FILTER_SYMBOLS[_filter], c = COLOR_SCHEME[_filter], ls = 'none')
                 
                 if fit == "HG":               
                     _ph = sorted(df_filter["phaseangle"])

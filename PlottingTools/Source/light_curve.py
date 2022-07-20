@@ -14,6 +14,7 @@ from typing import Optional, Literal
 import pandas as pd
 
 from plots.styles.filter_color_scheme import COLOR_SCHEME
+from plots.styles.filter_symbols import FILTER_SYMBOLS
 
 
 
@@ -75,7 +76,7 @@ def _light_curve(filters: Optional[list] = None,
              stmt
     )
     
-    if df.empty:
+    if df.empty: # add empty response here
         if df.empty:
             query = f"""No results returned for your query:\n"""
         if filters:
@@ -112,7 +113,7 @@ def _light_curve(filters: Optional[list] = None,
         for _filter in filters:
             df_filter = df[df['filter'] == _filter]
             if not df_filter.empty:
-                lc.ax.errorbar(data = df_filter , x = x, y = "mag", yerr=df_filter['magsigma'], label=_filter, fmt='o', c = COLOR_SCHEME[_filter])
+                lc.ax.errorbar(data = df_filter , x = x, y = "mag", yerr=df_filter['magsigma'], label=_filter, c = COLOR_SCHEME[_filter], marker=FILTER_SYMBOLS[_filter], ls='none')
         # add filter to plot
         lc.ax.legend(loc="upper right")        
 
