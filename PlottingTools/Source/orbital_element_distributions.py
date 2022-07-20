@@ -138,8 +138,6 @@ def _orbital_relations(
     else:
         qy = mpcorb.c[y]
         
-        
-        
     df = db.query(
         select(
             distinct(mpcorb.c['ssobjectid']), qx , qy, diasource.c['filter']).join(
