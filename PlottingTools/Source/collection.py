@@ -1,5 +1,5 @@
 from database import db
-from database.validators import validate_orbital_elements
+from database.validators import validate_orbital_elements, validate_times
 
 from orbital_element_distributions import _orbital_relations, eccentricity, perihelion, semi_major_axis, inclination, _tisserand_relations
 #change to relations
@@ -15,19 +15,21 @@ PLOT_TYPES = ['BOX', 'BOXEN', 'VIOLIN']
 ORB_PARAMS = ["eccentricity", "perihelion", "semi_major_axis", "inclination"]
 
 class Collection():
-    def __init__(self, **orbital_elements):
+    def __init__(self, start_time : Optional[float] = None, end_time : Optional[float] = None, **orbital_elements):
         
         self.min_a, self.max_a, self.min_incl, self.max_incl, self.min_peri, self.max_peri, self.min_e, self.max_e = validate_orbital_elements(**orbital_elements)
         
-    def detection_distributions(self, start_time : float, end_time : float,
+        self.start_time, self.end_time = validate_times(start_time = start_time, end_time = end_time)
+        
+        
+    def detection_distributions(self, start_time : Optional[float] = None, end_time : Optional[float] = None,
     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',):
         # hex plots
         # fix for monthly and yearly
-        
-        # not right, shows two bars when 3 days is requested. Bins at edges
+
         return _detection_distributions(
-            start_time = start_time,
-            end_time = end_time,
+            start_time = start_time if start_time else self.start_time,
+            end_time = end_time if end_time else self.end_time,
             time_format = time_format,
             min_a = self.min_a, 
             max_a = self.max_a,
@@ -43,8 +45,8 @@ class Collection():
     
     def plot_objects(self,
                     filters: Optional[list] = None,
-                    start_time : Optional[float] = None, end_time : Optional[float] = None,
                     title : Optional[str] = None,
+                     start_time : Optional[float] = None, end_time : Optional[float] = None,
                     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                     projection: Optional[Literal['2d', '3d']] = '2d',
                     ): 
@@ -53,8 +55,8 @@ class Collection():
         
         return objects_in_field(
             filters = filters,
-            start_time = start_time,
-            end_time = end_time,
+            start_time = start_time if start_time else self.start_time,
+            end_time = end_time if end_time else self.end_time,
             title = title,
             time_format = time_format,
             projection = projection,
@@ -77,7 +79,9 @@ class Collection():
                          plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter"
                          ):
         
-        return _orbital_relations(x = x, y = y, start_time = start_time, end_time = end_time,
+        return _orbital_relations(x = x, y = y, 
+                                  start_time = start_time if start_time else self.start_time, 
+                                  end_time = end_time if end_time else self.end_time,
                                   plot_type = plot_type, title = title,
                                   min_a = self.min_a, max_a = self.max_a, 
                                   min_incl = self.min_incl, max_incl = self.max_incl, 
@@ -92,24 +96,30 @@ class Collection():
                             title : Optional[str] = None,
                             plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
                            ):
-        tr = _tisserand_relations(y = y,  start_time = start_time, end_time = end_time, 
+        tr = _tisserand_relations(y = y,  
+                                  
+                                  start_time = start_time if start_time else self.start_time, 
+                                  end_time = end_time if end_time else self.end_time, 
                                   title = title, plot_type = plot_type, min_a = self.min_a, 
-                                    max_a = self.max_a,
-                                    min_incl = self.min_incl,
-                                    max_incl = self.max_incl,
-                                    min_peri = self.min_peri, 
-                                    max_peri = self.max_peri, 
-                                    min_e = self.min_e, 
-                                    max_e = self.max_e)
+                                  max_a = self.max_a,
+                                  min_incl = self.min_incl,
+                                  max_incl = self.max_incl,
+                                  min_peri = self.min_peri, 
+                                  max_peri = self.max_peri, 
+                                  min_e = self.min_e, 
+                                  max_e = self.max_e
+                                 )
         
         tr.ax.set_xlim(left = tr.data["tisserand"].min(), right = tr.data["tisserand"].max())
         tr.ax.set_ylim(bottom =  tr.data[y].min(), top = tr.data[y].max())
+        
         return tr
 
     def orbital_param_distribution(self,
                                     parameter : Literal[ORB_PARAMS],
                                     filters: Optional[list] = None,
-                                    start_time : Optional[float] = None, end_time : Optional[float] = None,
+                                    start_time : Optional[float] = None, 
+                                    end_time : Optional[float] = None,
                                     plot_type: Literal[PLOT_TYPES] = 'BOX',
                                     title : Optional[str] = None,
                                   ):
@@ -122,8 +132,8 @@ class Collection():
         args = dict(
             filters = filters,
             plot_type = plot_type,
-            start_time = start_time,
-            end_time = end_time,
+            start_time = start_time if start_time else self.start_time,
+            end_time = end_time if end_time else self.end_time,
             title = title,
             min_a = self.min_a, 
             max_a = self.max_a,
