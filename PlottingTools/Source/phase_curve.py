@@ -15,18 +15,22 @@ import numpy as np
 
 from sbpy.photometry import HG
 
-
+FIT = [None, 'HG']
 
 def _phase_curve(filters: Optional[list] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
                 mpcdesignation: Optional[str] = None,
                 ssobjectid: Optional[int] = None,
+                fit = None # FIT
 
 ):
 
     start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
-
+    
+    if fit not in FIT:
+        raise Exception(f"{fit} is not a valid fit option. Valid options include {FIT}")
+        
 
     cols = [diasource.c['magsigma'], diasource.c['filter'], mpcorb.c['mpcdesignation'], diasource.c['ssobjectid'], diasource.c['midpointtai'],diasource.c['mag'], sssource.c['phaseangle'], sssource.c['topocentricdist'], sssource.c['heliocentricdist']]
     
@@ -92,16 +96,17 @@ def _phase_curve(filters: Optional[list] = None,
         pc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values), x = "phaseangle", y="mag", title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel=f"Phase Angle ({DEGREE})", ylabel="Reduced magnitude")
         
                          
-                         
         for _filter in filters:
             df_filter = df[df['filter'] == _filter]
-            _ph = sorted(df_filter["phaseangle"])
-            _mag = HG.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12err'])
-                         
+             
             if not df_filter.empty:
                 pc.ax.errorbar(data = df_filter , x = "phaseangle", y = "cmag", yerr=df_filter['magsigma'], label=_filter, fmt='o', c = COLOR_SCHEME[_filter])
-                pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter])               
-        pc.ax.legend(loc="upper right")        
+                
+                if fit == "HG":               
+                    _ph = sorted(df_filter["phaseangle"])
+                    _mag = HG.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12err'])
+                    pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter])               
+            pc.ax.legend(loc="upper right")        
 
     else:
         pc = ScatterPlot(data = df, x = "phaseangle", y="cmag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel=f"Phase Angle ({DEGREE})", ylabel="Reduced Magnitude")

@@ -130,14 +130,17 @@ class Object():
                     end_time : Optional[float] = None,
                     filters: Optional[list] = None,
                     title : Optional[str] = None,
+                    fit = None
                    ):
+        
         return _phase_curve(
             mpcdesignation = self.mpcdesignation,
             ssobjectid = self.ssobjectid,
             start_time = start_time,
             end_time = end_time,
             filters = filters,
-            title = title
+            title = title,
+            fit = fit
         )
         
     
