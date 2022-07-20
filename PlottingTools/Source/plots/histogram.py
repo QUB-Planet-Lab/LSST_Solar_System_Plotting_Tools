@@ -2,24 +2,30 @@ from .plot import Plot
 
 import matplotlib.pyplot as plt
 from matplotlib.cm import ScalarMappable
+import seaborn as sns
 
 from typing import Optional, Literal
 
-#add 2d histogram here
+LIBRARIES = ['matplotlib', 'seaborn']
 
 
-def chart(x, y, ax, ax_histx, ax_histy):
-    # no labels
-    pass
-
-    
     
 class HistogramPlot(Plot):
-    def __init__(self, data, x, y: Optional[str] = None,xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection : Literal['1d', '2d', '2d_hex'] = '1d', colorbar : bool = True):
+    def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection : Literal['1d', '2d', '2d_hex'] = '1d', colorbar : bool = True, library = 'seaborn'):
         super().__init__(data, xlabel, ylabel, title, rc_params)
         
+        self.library = library
+        
+        print(self.library)
+        
+        if library not in LIBRARIES:
+            raise Exception(f"{library} is not a valid option for library. Valid options include {LIBRARIES}")
+            
         if projection == '1d':
-            self.plot = self.ax.hist(x = data[x], bins = xbins, edgecolor="white")
+            if library == "seaborn":
+                self.plot = sns.histplot(data = data, x = x)
+            else:
+                self.plot = self.ax.hist(x = data[x], bins = xbins, edgecolor="white")
         
         if projection == '2d':
             if not y:

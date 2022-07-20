@@ -45,7 +45,7 @@ def _detection_distributions(
     conditions = create_orbit_conditions(**orbital_elements)
     
 
-    data = db.query(
+    df = db.query(
                 select(diasource.c['midpointtai'], ).distinct(diasource.c['ssobjectid']).where(
                     diasource.c['midpointtai'] >= start_time,
                     diasource.c['midpointtai'] <= end_time
@@ -56,19 +56,31 @@ def _detection_distributions(
     bins = [start_time + i for i in range(0, math.floor(end_time - start_time) + 1, 1)]
     
     
-    hp = HistogramPlot(data = data, x="midpointtai", xbins = bins)
+    df = df.sort_values(by = ['midpointtai'], ascending=True)
+
+    df['datetime'] = [date[0:10] for date in format_times(df['midpointtai'].tolist(), _format="ISO")]
+    
+
+        
+    print(df)
+    
+    
+    hp = HistogramPlot(data = df, x="datetime", xbins = bins)
         
     hp.ax.set(yscale="log")
     hp.fig.suptitle(title if title else f"Detection distributions")
     
+    hp.fig.autofmt_xdate()
+    
+    '''
     hp.ax.set_xlabel("Date")
     hp.ax.set_ylabel("No. of Detections")
     
     if time_format == "ISO":
         hp.ax.set_xticks(ticks = bins, labels = [date[0:10] for date in format_times(bins, _format="ISO")])
         
-        hp.fig.autofmt_xdate()
         
+    '''    
     return hp
 
 

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.offsetbox import AnchoredText
@@ -10,7 +10,7 @@ import matplotlib.font_manager
 
 class Plot():
     '''A parent class which all plotting classes inherit from.'''
-    def __init__(self, data, xlabel : str, ylabel : str = "", title: str = "", rc_params : dict = {}, plot_info : dict = {}):     
+    def __init__(self, data, library : Optional[str], xlabel : str, ylabel : str = "",  title: str = "", rc_params : dict = {}, plot_info : dict = {}):     
         self.data = data
         if rc_params:
             self.context = sns.set(rc=rc_params)# add all rc params here. Can be used for seaborn and matplotlib as long as it is figure level.
@@ -19,34 +19,36 @@ class Plot():
             
         add_font()
         
-        plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
-        self.fig, self.ax = plt.subplots()
-        
-        self.title = title # Is is necessary to add these to variables?
-        self.xlabel = xlabel
-        self.ylabel = ylabel
-        self.plot_info = plot_info
-        
-        
-        if self.plot_info:
-            text_box = ""
-            
-            for param in self.plot_info:
-                text_box += f"{param}: {self.plot_info[param]}\n"
-            text_box = text_box[0:-1]
-            at = AnchoredText(
-                text_box, prop=dict(size=15), frameon=True, loc='upper right')
-            at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-            self.ax.add_artist(at)
-        
-        self.fig.suptitle(self.title)
-        self.fig.supxlabel(self.xlabel)
-        self.fig.supylabel(self.ylabel)
-        
-        if self.xlabel:
-            self.ax.set_xlabel('')
-        if self.ylabel:
-            self.ax.set_ylabel('')
+        if library != "seaborn":
+            plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
+            self.fig, self.ax = plt.subplots()
+
+            self.title = title # Is is necessary to add these to variables?
+            self.xlabel = xlabel
+            self.ylabel = ylabel
+            self.plot_info = plot_info
+
+            self.library = library
+
+            if self.plot_info:
+                text_box = ""
+
+                for param in self.plot_info: # remove
+                    text_box += f"{param}: {self.plot_info[param]}\n"
+                text_box = text_box[0:-1]
+                at = AnchoredText(
+                    text_box, prop=dict(size=15), frameon=True, loc='upper right')
+                at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+                self.ax.add_artist(at)
+
+            self.fig.suptitle(self.title)
+            self.fig.supxlabel(self.xlabel)
+            self.fig.supylabel(self.ylabel)
+
+            if self.xlabel:
+                self.ax.set_xlabel('')
+            if self.ylabel:
+                self.ax.set_ylabel('')
 
     def update_title(self, _title):
         #self.title(_title)
@@ -81,10 +83,10 @@ class Plot():
             ## add replot function, takes any of the columns from the dataframe and filters them to provide a new plot that maintains the old plot.
     
     def save(self, file_name : str, extension : Literal['png', 'jpeg', 'pdf'] = 'png'):
-        if self.context:
-            self.context
-
-        #self.add_plot_info()
-        
-        self.fig.savefig(f"{file_name}.{extension}")
+        if self.library == "seaborn":
+            print(self.plot)
+            self.plot.get_figure().savefig(f"{file_name}.{extension}")
+            
+        else:
+            self.fig.savefig(f"{file_name}.{extension}")
         
