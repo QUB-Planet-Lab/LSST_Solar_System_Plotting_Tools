@@ -84,10 +84,8 @@ class Plot():
     
     def save(self, file_name : str, extension : Literal['png', 'jpeg', 'pdf'] = 'png'):
         if self.library == "seaborn":
-            print(self.plot)
             try:
                 self.plot.get_figure().savefig(f"{file_name}.{extension}")
-                # does figure work here
             except:
                 # In the event that an non-matplotlib ax is not returned i.e. JointGrid
                 self.plot.savefig(f"{file_name}.{extension}")

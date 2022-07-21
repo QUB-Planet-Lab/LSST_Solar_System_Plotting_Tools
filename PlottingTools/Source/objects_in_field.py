@@ -29,6 +29,7 @@ def objects_in_field(
     ssobjectid: Optional[int] = None,
     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
     projection: Optional[Literal['2d', '3d']] = '2d',
+    library = "seaborn",
     **orbital_elements
 ):
     
@@ -102,17 +103,19 @@ def objects_in_field(
         return # Is this the best way to return no results?
     
     if filters:
-        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz", projection = projection)
+        
         for _filter in filters:
             df_filter = df[df['filter'] == _filter]
             
             if not df_filter.empty:
                 if projection == '2d':
-                    lc.ax.scatter(x = df_filter["heliocentricx"], y = df_filter["heliocentricy"], label=_filter,  c = COLOR_SCHEME[_filter])
-        # add filter to plot
-                elif projection == '3d':
+                    lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", projection = projection, library = "library")
                     
-                    lc.ax.scatter(xs = df_filter["heliocentricx"], ys = df_filter["heliocentricy"], zs = df_filter["heliocentricz"], label=_filter, c = COLOR_SCHEME[_filter])
+                    
+                    # add filter to plot
+                elif projection == '3d':
+                    lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz", projection = projection)
+                    
                    
         lc.ax.set_xlabel("X (au)")
         lc.ax.set_ylabel("Y (au)")

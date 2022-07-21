@@ -49,6 +49,7 @@ class Collection():
                      start_time : Optional[float] = None, end_time : Optional[float] = None,
                     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                     projection: Optional[Literal['2d', '3d']] = '2d',
+                    library = "seaborn"
                     ): 
         # plot orbits of all items. Nice to animate in the future
         #objects_in_field
@@ -60,6 +61,7 @@ class Collection():
             title = title,
             time_format = time_format,
             projection = projection,
+            library = "seaborn",
             min_a = self.min_a, 
             max_a = self.max_a,
             min_incl = self.min_incl,
