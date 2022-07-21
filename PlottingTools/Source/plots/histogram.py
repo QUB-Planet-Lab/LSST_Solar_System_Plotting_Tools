@@ -18,10 +18,7 @@ class HistogramPlot(Plot):
             raise Exception(f"{library} is not a valid option for library. Valid options include {LIBRARIES}")
             
         self.library = library
-        
-        
-        
-            
+    
         if projection == '1d':
             if self.library == "seaborn":
                 self.plot = sns.histplot(data = data, x = x)
