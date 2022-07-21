@@ -182,7 +182,9 @@ def base(
          start_time : Optional[float] = None, end_time : Optional[float] = None,
          plot_type: Literal[PLOT_TYPES] = 'BOX',
          title : Optional[str] = None,
+         library: Optional[str] = "seaborn",
          **orbital_elements
+    
         ):
     
     plot_type = plot_type.upper()
@@ -206,9 +208,7 @@ def base(
         filters = validate_filters(list(set(filters)))
         conditions.append(diasource.c['filter'].in_(filters))
         
-    
     create_orbit_conditions(conditions = conditions, **orbital_elements)
-        
         
     df = db.query(
         stmt.where(
@@ -223,11 +223,11 @@ def base(
             **orbital_elements
         )
 
-    
     start_time, end_time = format_times([start_time, end_time], _format="ISO")
     label = ELEMENTS[element]['label']
     unit = ELEMENTS[element]['unit']
     xlabel = label
+    
     if unit:
         xlabel += f' ({unit})'
     args = dict(x = element, 
@@ -248,7 +248,7 @@ def base(
         if title:
             args['title']= title 
         else:
-            args['title'] = f"{label} distributions across all filters\n {start_time}-{end_time}"    
+            args['title'] = f"{label} distributions across all filters\ {start_time}-{end_time}"    
     
     
     cols = df["filter"].unique()
@@ -260,9 +260,9 @@ def base(
             
             for col in cols:
                 data.append(df[df["filter"] == col][element])
-            
-            plot_template = BoxPlot(**args, data = data)
-            
+            if library == "seaborn":
+                plot_template = BoxPlot(data = df, x = element, y="filter")
+            '''
             for i, patch in enumerate(plot_template.plot['boxes']):
                 patch.set(facecolor = COLOR_SCHEME[cols[i]])
 
@@ -270,6 +270,7 @@ def base(
                 median.set_color('black')
                 
             plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
+            '''
         else:
             
             plot_template = BoxPlot(**args, data = df)
@@ -292,18 +293,26 @@ def base(
     
     elif plot_type == "VIOLIN":
         if filters:
-            data = []
-            for col in cols:
-                data.append(df[df["filter"] == col][element])
+            if library == "seaborn":
+                #print(args)
+                # decision on whether to have it only seaborn...
+                # fix colors, titles etc.
+                return ViolinPlot(data = df, x = element, y = "filter")
             
-            plot_template = ViolinPlot(**args, data = data)
+            else:
+                data = []
+                for col in cols:
+                    data.append(df[df["filter"] == col][element])
 
-            plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
-            
-            for i, pc in enumerate(plot_template.plot['bodies']):
-                pc.set_facecolor(COLOR_SCHEME[cols[i]])
-                pc.set_edgecolor('black')
-         
+                plot_template = ViolinPlot(**args, data = data)
+
+                plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
+
+                for i, pc in enumerate(plot_template.plot['bodies']):
+                    pc.set_facecolor(COLOR_SCHEME[cols[i]])
+                    pc.set_edgecolor('black')
+        
+        
         else:
             plot_template = ViolinPlot(**args, data = df)
             for pc in plot_template.plot['bodies']:
