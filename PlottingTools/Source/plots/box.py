@@ -31,7 +31,7 @@ class BoxPlot(Plot):
             
             
             if library == "seaborn":
-                self.plot = sns.boxplot(data = data, x = self.x, y = self.y, ax = ax)
+                self.plot = sns.boxplot(data = data, x = self.x, y = self.y, ax = self.ax)
             else: 
                 self.plot = self.ax.boxplot(x = data, vert=False, patch_artist=True)
             
