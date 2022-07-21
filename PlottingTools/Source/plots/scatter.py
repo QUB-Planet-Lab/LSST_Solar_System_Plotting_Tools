@@ -12,7 +12,7 @@ LIBRARIES = ['matplotlib', 'seaborn']
 class ScatterPlot(Plot):
     """Helper object for creating plots"""
     
-    def __init__(self, data, x, y, z : Optional[str] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection: Optional[Literal['2d', '3d']] = '2d', library = 'seaborn'):
+    def __init__(self, data, x, y, z : Optional[str] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection: Optional[Literal['2d', '3d']] = '2d', library : Optional[str] = 'seaborn'):
         """
             :param data
             :param: x, value to be plotted on x scale
@@ -22,7 +22,7 @@ class ScatterPlot(Plot):
         
         if library not in LIBRARIES:
             raise Exception(f"{library} is not a valid option for library. Valid options include {LIBRARIES}")
-            
+        print(library)
         self.library = library
         
         if projection == '2d':

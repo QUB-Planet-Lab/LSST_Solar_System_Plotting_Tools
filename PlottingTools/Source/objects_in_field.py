@@ -29,7 +29,7 @@ def objects_in_field(
     ssobjectid: Optional[int] = None,
     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
     projection: Optional[Literal['2d', '3d']] = '2d',
-    library = "seaborn",
+    library : Optional[str] = "seaborn",
     **orbital_elements
 ):
     
@@ -102,6 +102,7 @@ def objects_in_field(
         print(query)
         return # Is this the best way to return no results?
     
+    
     if filters:
         
         for _filter in filters:
@@ -109,12 +110,12 @@ def objects_in_field(
             
             if not df_filter.empty:
                 if projection == '2d':
-                    lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", projection = projection, library = "library")
+                    lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", projection = projection, library = library)
                     
                     
                     # add filter to plot
                 elif projection == '3d':
-                    lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz", projection = projection)
+                    lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz", projection = projection, library = library)
                     
                    
         lc.ax.set_xlabel("X (au)")
@@ -125,7 +126,7 @@ def objects_in_field(
                     
     else:
         if projection == '2d':
-            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy")
+            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", library = library)
             lc.ax.scatter(x = [0], y = [0], c = "black")
             lc.ax.set_xlabel("X (au)")
             lc.ax.set_ylabel("Y (au)")    
@@ -134,7 +135,7 @@ def objects_in_field(
             
 
         elif projection == '3d':
-            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", z = "heliocentricz", projection = '3d')
+            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", z = "heliocentricz", projection = '3d', library = library)
             lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black")
             lc.ax.set_xlabel("X (au)")
             lc.ax.set_ylabel("Y (au)")
