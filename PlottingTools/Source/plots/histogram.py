@@ -12,7 +12,7 @@ LIBRARIES = ['matplotlib', 'seaborn']
     
 class HistogramPlot(Plot):
     def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection : Literal['1d', '2d', '2d_hex'] = '1d', colorbar : bool = True, library = 'seaborn'):
-        super().__init__(data, xlabel, ylabel, title, rc_params)
+        super().__init__(data, xlabel, ylabel, title, library)
         
         if library not in LIBRARIES:
             raise Exception(f"{library} is not a valid option for library. Valid options include {LIBRARIES}")
@@ -21,7 +21,7 @@ class HistogramPlot(Plot):
     
         if projection == '1d':
             if self.library == "seaborn":
-                self.plot = sns.histplot(data = data, x = x)
+                self.plot = sns.histplot(data = data, x = x, ax = self.ax)
             else:
                 self.plot = self.ax.hist(x = data[x], bins = xbins, edgecolor="white")
         
@@ -32,7 +32,9 @@ class HistogramPlot(Plot):
             # TO-DO create dynamic sizing of plots
             
             if self.library == "seaborn":
+                self.fig.clear()
                 self.plot = sns.histplot(data = data, x= x, y = y, cbar = colorbar)
+            
             else:
                 self.fig.clear()
                 self.fig = plt.figure(figsize=(8, 8))
@@ -68,7 +70,8 @@ class HistogramPlot(Plot):
             if not y:
                 raise Exception("Y values must be provided when using a 2d histogram")
             if library == "seaborn":
-                self.plot = sns.jointplot(data = data, x = x, y = y ,kind="hex")
+                self.fig.clear()
+                self.plot = sns.jointplot(data = data, x = x, y = y, kind="hex")
             else:
             #self.plot = self.ax.hexbin(x = data[x], y=data[y])
                 self.fig.clear()

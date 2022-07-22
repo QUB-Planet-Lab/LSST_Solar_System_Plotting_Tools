@@ -10,45 +10,46 @@ import matplotlib.font_manager
 
 class Plot():
     '''A parent class which all plotting classes inherit from.'''
-    def __init__(self, data, library : Optional[str], xlabel : str, ylabel : str = "",  title: str = "", rc_params : dict = {}, plot_info : dict = {}):     
+    
+    def __init__(self, data, xlabel : str = "", ylabel : str = "",  title: str = "", library : Optional[str] = "seaborn"):     #rc_params : dict = {}
+        
+        #validate library
+
         self.data = data
+        self.library = library
+        self.title = title
+        
+        '''
         if rc_params:
             self.context = sns.set(rc=rc_params)# add all rc params here. Can be used for seaborn and matplotlib as long as it is figure level.
         else:
             self.context = None
-            
+        '''    
         add_font()
         
-        if library != "seaborn":
-            plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
-            self.fig, self.ax = plt.subplots()
+    
+        plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
+        self.fig, self.ax = plt.subplots()
+            
+           
+        self.title = title # Is is necessary to add these to variables?
+        self.xlabel = xlabel
+        self.ylabel = ylabel
+        #self.plot_info = plot_info
 
-            self.title = title # Is is necessary to add these to variables?
-            self.xlabel = xlabel
-            self.ylabel = ylabel
-            self.plot_info = plot_info
+        self.library = library
 
-            self.library = library
 
-            if self.plot_info:
-                text_box = ""
+        self.fig.suptitle(self.title)
+        self.fig.supxlabel(self.xlabel)
+        self.fig.supylabel(self.ylabel)
 
-                for param in self.plot_info: # remove
-                    text_box += f"{param}: {self.plot_info[param]}\n"
-                text_box = text_box[0:-1]
-                at = AnchoredText(
-                    text_box, prop=dict(size=15), frameon=True, loc='upper right')
-                at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-                self.ax.add_artist(at)
-
-            self.fig.suptitle(self.title)
-            self.fig.supxlabel(self.xlabel)
-            self.fig.supylabel(self.ylabel)
-
-            if self.xlabel:
-                self.ax.set_xlabel('')
-            if self.ylabel:
-                self.ax.set_ylabel('')
+        print(self.title)
+        
+        if self.xlabel:
+            self.ax.set_xlabel('')
+        if self.ylabel:
+            self.ax.set_ylabel('')
 
     def update_title(self, _title):
         #self.title(_title)

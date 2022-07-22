@@ -260,17 +260,26 @@ def base(
             
             for col in cols:
                 data.append(df[df["filter"] == col][element])
+            
+            plot_template = BoxPlot(data = df, x = element, y="filter", library = library)
             if library == "seaborn":
-                plot_template = BoxPlot(data = df, x = element, y="filter")
-            '''
-            for i, patch in enumerate(plot_template.plot['boxes']):
-                patch.set(facecolor = COLOR_SCHEME[cols[i]])
-
-            for median in plot_template.plot['medians']:
-                median.set_color('black')
+                #print(plot_template)
+                #print(plot_template.ax.boxes)
                 
-            plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
-            '''
+                #Seaborn color customisation required
+                for i, patch in enumerate(plot_template.ax.artists):
+                    #print(patch)
+                    patch.set_facecolor(COLOR_SCHEME[cols[i]])
+
+            if library == "matplotlib":
+                for i, patch in enumerate(plot_template.plot['boxes']):
+                    patch.set(facecolor = COLOR_SCHEME[cols[i]])
+
+                for median in plot_template.plot['medians']:
+                    median.set_color('black')
+
+                plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
+            
         else:
             
             plot_template = BoxPlot(**args, data = df)
@@ -366,8 +375,8 @@ def perihelion(filters: Optional[list] = None,
         **orbital_elements,
         plot_type = plot_type,
         title = title,
-        element = 'peri',
-        stmt = select(distinct(mpcorb.c['ssobjectid']), mpcorb.c['peri'], diasource.c['filter']).join(
+        element = 'q',
+            stmt = select(distinct(mpcorb.c['ssobjectid']), mpcorb.c['q'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
         
@@ -407,7 +416,7 @@ def semi_major_axis(filters: Optional[list] = None,
         plot_type = plot_type,
         title = title,
         element = 'a',
-        stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['peri'], (mpcorb.c['peri'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
+        stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['q'], (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
 

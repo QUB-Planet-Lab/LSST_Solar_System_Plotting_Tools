@@ -130,6 +130,7 @@ class Object():
                     end_time : Optional[float] = None,
                     filters: Optional[list] = None,
                     title : Optional[str] = None,
+                    library : Optional[str] = "matplotlib",
                     fit = None
                    ):
         
@@ -140,6 +141,7 @@ class Object():
             end_time = end_time,
             filters = filters,
             title = title,
+            library = library,
             fit = fit
         )
         
@@ -148,7 +150,8 @@ class Object():
                     filters: Optional[list] = None,
                     start_time : Optional[float] = None, end_time : Optional[float] = None,
                     title : Optional[str] = None,
-                    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO'
+                    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
+                    library: Optional[str] = "matplotlib"
                    ):
         return _light_curve(
             mpcdesignation = self.mpcdesignation,
@@ -157,7 +160,8 @@ class Object():
             start_time = start_time,
             end_time = end_time,
             title = title,
-            time_format = time_format
+            time_format = time_format,
+            library = library
         )
     
     def plot_orbit(self,
@@ -166,6 +170,7 @@ class Object():
                 title : Optional[str] = None,
                 time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                 projection: Optional[Literal['2d', '3d']] = '2d',
+                library: Optional[str] = "matplotlib",
                 **orbital_elements
                 ): 
                 # nice to animate this aswell with theoretical data if available
@@ -178,6 +183,7 @@ class Object():
             title = title,
             time_format = time_format,
             projection = projection,
+            library = library,
             **orbital_elements
         )
         

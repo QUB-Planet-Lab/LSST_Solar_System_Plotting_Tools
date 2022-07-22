@@ -60,11 +60,6 @@ def _detection_distributions(
 
     df['datetime'] = [date[0:10] for date in format_times(df['midpointtai'].tolist(), _format="ISO")]
     
-
-        
-    print(df)
-    
-    
     hp = HistogramPlot(data = df, x="datetime", xbins = bins)
         
     hp.ax.set(yscale="log")

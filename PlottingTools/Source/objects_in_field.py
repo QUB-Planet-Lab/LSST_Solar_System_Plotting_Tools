@@ -14,7 +14,7 @@ from database.conditions import create_orbit_conditions
 
 from plots import Plot, ScatterPlot
 from plots.styles.filter_color_scheme import COLOR_SCHEME
-
+from plots.styles.filter_symbols import FILTER_SYMBOLS
 from sqlalchemy import select, func, text
 
 from typing import Optional, Literal
@@ -104,18 +104,20 @@ def objects_in_field(
     
     
     if filters:
-        
+        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz" , projection = projection, library = library)
+
+        lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black") ## add sun and earth?
+
         for _filter in filters:
             df_filter = df[df['filter'] == _filter]
             
             if not df_filter.empty:
-                if projection == '2d':
-                    lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", projection = projection, library = library)
+                
+                if projection == "2d":
+                    lc.ax.scatter(x = df_filter['heliocentricx'] , y = df_filter['heliocentricy'], c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
                     
-                    
-                    # add filter to plot
                 elif projection == '3d':
-                    lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz", projection = projection, library = library)
+                    lc.ax.scatter(xs = df_filter['heliocentricx'] , ys = df_filter['heliocentricy'], zs=df_filter['heliocentricz'] ,c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
                     
                    
         lc.ax.set_xlabel("X (au)")

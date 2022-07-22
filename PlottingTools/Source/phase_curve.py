@@ -23,6 +23,7 @@ def _phase_curve(filters: Optional[list] = None,
                 title : Optional[str] = None,
                 mpcdesignation: Optional[str] = None,
                 ssobjectid: Optional[int] = None,
+                library : Optional[str] = "matplotlib",
                 fit = None # FIT
 
 ):
@@ -94,7 +95,7 @@ def _phase_curve(filters: Optional[list] = None,
     
     if filters:
         #note is yerr = 'magsigma'?
-        pc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values), x = "phaseangle", y="mag", title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel=f"Phase Angle ({DEGREE})", ylabel="Reduced magnitude")
+        pc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values), x = "phaseangle", y="mag", title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel=f"Phase Angle ({DEGREE})", ylabel="Reduced magnitude", library = library)
         
                          
         for _filter in filters:
@@ -110,7 +111,7 @@ def _phase_curve(filters: Optional[list] = None,
             pc.ax.legend(loc="upper right")        
 
     else:
-        pc = ScatterPlot(data = df, x = "phaseangle", y="cmag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel=f"Phase Angle ({DEGREE})", ylabel="Reduced Magnitude")
+        pc = ScatterPlot(data = df, x = "phaseangle", y="cmag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel=f"Phase Angle ({DEGREE})", ylabel="Reduced Magnitude", library = library)
 
     pc.ax.invert_yaxis()
     
