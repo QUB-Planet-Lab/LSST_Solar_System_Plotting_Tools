@@ -20,7 +20,7 @@ class BoxPlot(Plot):
              
         if not y:
             self.plot = self.ax.boxplot(x = data[self.x], labels=[''], vert=False, patch_artist = True)
-             s
+             
                 
         elif not x:
             self.plot = self.ax.boxplot(x = data[self.y], vert=True, patch_artist=True, labels=[''])
