@@ -186,9 +186,8 @@ def base(
          **orbital_elements
     
         ):
-    
     plot_type = plot_type.upper()
-
+    
     if plot_type not in PLOT_TYPES:
         raise TypeError(f"{plot_type} is not a valid chart option. Valid plot options include 'BOX', 'BOXEN' or 'VIOLIN'")
     
@@ -231,7 +230,7 @@ def base(
     if unit:
         xlabel += f' ({unit})'
     args = dict(x = element, 
-                xlabel = f'{xlabel}', 
+                xlabel = f'{xlabel}',
                ) 
     
     if filters:
@@ -261,7 +260,7 @@ def base(
             for col in cols:
                 data.append(df[df["filter"] == col][element])
             
-            plot_template = BoxPlot(data = df, x = element, y="filter", library = library)
+            plot_template = BoxPlot(data = df, library = library, **args)
             if library == "seaborn":
                 #print(plot_template)
                 #print(plot_template.ax.boxes)
@@ -282,7 +281,7 @@ def base(
             
         else:
             
-            plot_template = BoxPlot(**args, data = df)
+            plot_template = BoxPlot(**args, data = df, library = library)
             
             
             for median in plot_template.plot['medians']:
@@ -306,14 +305,14 @@ def base(
                 #print(args)
                 # decision on whether to have it only seaborn...
                 # fix colors, titles etc.
-                return ViolinPlot(data = df, x = element, y = "filter")
+                return ViolinPlot(data = df, library = library ,**args)
             
             else:
                 data = []
                 for col in cols:
                     data.append(df[df["filter"] == col][element])
 
-                plot_template = ViolinPlot(**args, data = data)
+                plot_template = ViolinPlot(**args, data = data) # not supported
 
                 plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
 
@@ -348,7 +347,7 @@ def eccentricity(filters: Optional[list] = None,
                  **orbital_elements
                 ):
     
-    
+    print(title)
     return base(
         filters = filters,
         start_time = start_time, end_time = end_time,

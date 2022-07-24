@@ -39,13 +39,11 @@ class Plot():
 
         self.library = library
 
-
+        print(self.title, "title")
         self.fig.suptitle(self.title)
         self.fig.supxlabel(self.xlabel)
         self.fig.supylabel(self.ylabel)
-
-        print(self.title)
-        
+      
         if self.xlabel:
             self.ax.set_xlabel('')
         if self.ylabel:

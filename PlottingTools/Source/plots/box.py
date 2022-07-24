@@ -8,7 +8,7 @@ import seaborn as sns
 from .styles.filter_color_scheme import COLOR_SCHEME
 
 
-LIBARIES = ["seaborn", "matplotlib"]
+LIBARIES = ["seaborn"] # , "matplotlib"] # support seaborn currently
 
 class BoxPlot(Plot):
     # does specific functionality need to be removed from here?
@@ -17,7 +17,7 @@ class BoxPlot(Plot):
         
         self.x = x
         self.y = y
-             
+                
         if not y:
             self.plot = self.ax.boxplot(x = data[self.x], labels=[''], vert=False, patch_artist = True)
              
@@ -27,7 +27,6 @@ class BoxPlot(Plot):
                    
         else:
             # add optionality to have the boxes vertically aligned?
-            
             
             if library == "seaborn":
                 self.plot = sns.boxplot(data = data, x = self.x, y = self.y, ax = self.ax).set(xlabel = None, ylabel = None)

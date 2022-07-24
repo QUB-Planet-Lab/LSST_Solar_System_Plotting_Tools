@@ -16,9 +16,7 @@ class ViolinPlot(Plot):
         
         # need to work on data formating here
         # list of lists for matplotlib, dataframe for seaborn
-        
-        
-        
+         
         self.x = x
         self.y = y
                 
@@ -36,7 +34,7 @@ class ViolinPlot(Plot):
             
         else:
             if library == "seaborn":
-                self.plot = sns.violinplot(data = data, x = x, y = y, ax = self.ax)
+                self.plot = sns.violinplot(data = data, x = x, y = y, ax = self.ax).set(xlabel = None, ylabel = None)
             else:
                 self.plot = self.ax.violinplot(dataset = data, vert=False)
             
