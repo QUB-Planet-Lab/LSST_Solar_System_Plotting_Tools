@@ -225,10 +225,12 @@ def base(
     start_time, end_time = format_times([start_time, end_time], _format="ISO")
     label = ELEMENTS[element]['label']
     unit = ELEMENTS[element]['unit']
+    
     xlabel = label
     
     if unit:
         xlabel += f' ({unit})'
+        
     args = dict(x = element, 
                 xlabel = f'{xlabel}',
                ) 
