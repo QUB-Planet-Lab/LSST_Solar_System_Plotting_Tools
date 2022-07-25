@@ -33,6 +33,7 @@ from typing import Optional, Literal
 
 
 def _detection_distributions(
+    df,
     start_time : float, end_time : float,
     title : Optional[str] = None,
     #todo - timeframe : Literal["day", "monthly", "year"] = "day",
@@ -40,11 +41,11 @@ def _detection_distributions(
     **orbital_elements
 ):
     
-    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
     
-    conditions = create_orbit_conditions(**orbital_elements)
     
-
+    #conditions = create_orbit_conditions(**orbital_elements)
+    
+    '''
     df = db.query(
                 select(diasource.c['midpointtai'], ).distinct(diasource.c['ssobjectid']).where(
                     diasource.c['midpointtai'] >= start_time,
@@ -52,9 +53,11 @@ def _detection_distributions(
                 )
             )
      
-                
+    '''  
+    
     bins = [start_time + i for i in range(0, math.floor(end_time - start_time) + 1, 1)]
     
+    print(df)
     
     df = df.sort_values(by = ['midpointtai'], ascending=True)
 
@@ -67,6 +70,7 @@ def _detection_distributions(
     
     hp.fig.autofmt_xdate()
     
+    
     '''
     hp.ax.set_xlabel("Date")
     hp.ax.set_ylabel("No. of Detections")
@@ -74,8 +78,8 @@ def _detection_distributions(
     if time_format == "ISO":
         hp.ax.set_xticks(ticks = bins, labels = [date[0:10] for date in format_times(bins, _format="ISO")])
         
-        
-    '''    
+    '''  
+    
     return hp
 
 

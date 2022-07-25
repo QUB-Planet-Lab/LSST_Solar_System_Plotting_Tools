@@ -1,8 +1,11 @@
 from database import db
-from database.validators import validate_orbital_elements, validate_times
+from database.validators import validate_orbital_elements, validate_times, validate_filters
+from database.schemas import sssource, mpcorb, diasource
+from database.conditions import create_orbit_conditions
 
 from orbital_element_distributions import _orbital_relations, eccentricity, perihelion, semi_major_axis, inclination, _tisserand_relations
 #change to relations
+
 
 from objects_in_field import objects_in_field
 
@@ -10,35 +13,97 @@ from observations import _detection_distributions
 
 from typing import Optional, Literal
 
+from sqlalchemy import select, func, distinct
 
 PLOT_TYPES = ['BOX', 'BOXEN', 'VIOLIN']
 ORB_PARAMS = ["eccentricity", "perihelion", "semi_major_axis", "inclination"]
 
 class Collection():
-    def __init__(self, start_time : Optional[float] = None, end_time : Optional[float] = None, **orbital_elements):
+    def __init__(self, lazy_loading: Optional[bool] = True, start_time : Optional[float] = None, end_time : Optional[float] = None, **orbital_elements):
+        
+        
+        
+        self.lazy_loading = lazy_loading
         
         self.min_a, self.max_a, self.min_incl, self.max_incl, self.min_peri, self.max_peri, self.min_e, self.max_e = validate_orbital_elements(**orbital_elements)
         
         self.start_time, self.end_time = validate_times(start_time = start_time, end_time = end_time)
         
         
+        self.conditions = []
+        
+        if self.start_time:
+            self.conditions.append(diasource.c['midpointtai'] >= self.start_time)
+    
+        if self.end_time:
+            self.conditions.append(diasource.c['midpointtai'] <= self.end_time)
+        
+        
+        self.conditions = create_orbit_conditions(conditions = self.conditions, **orbital_elements)
+        
+        a_J = 5.2038 # au
+    
+        tisserand = (a_J / (mpcorb.c['q'] / (1 - mpcorb.c['e'])) + 2 * func.cos(mpcorb.c['incl']) * func.sqrt((mpcorb.c['q'] / (1 - mpcorb.c['e'])) / a_J * (1 - func.power(mpcorb.c['e'], 2)))).label("tisserand")
+
+        self.cols = [
+            diasource.c['midpointtai'],
+            diasource.c['filter'],
+
+            sssource.c['heliocentricx'],
+            sssource.c['heliocentricy'],
+            sssource.c['heliocentricz'],
+
+            mpcorb.c['q'],
+            mpcorb.c['e'],
+            mpcorb.c['incl'],
+            (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a'),
+
+            tisserand
+        ]
+    
+        if lazy_loading == False:
+            #load data now.
+            self.data = self.get_data()
+    
+        else:
+            self.data = None
+        print(self.data)
+        
+    def get_data(self):
+        # THIS DISTINCT WORKS
+        
+        self.data = db.query(
+                select(
+                    *self.cols
+                ).join(
+                    diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
+                ).join(
+                    sssource, sssource.c['ssobjectid'] == mpcorb.c['ssobjectid']
+                ).distinct(mpcorb.c['ssobjectid']).where(*self.conditions)
+            )
+        return self.data
+    
     def detection_distributions(self, start_time : Optional[float] = None, end_time : Optional[float] = None,
-    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',):
+    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO'):
         # hex plots
         # fix for monthly and yearly
-
+        
+        #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        
+        if self.lazy_loading:
+            if self.data is None:
+                df = self.get_data() #provide only necessary columns
+            else:
+                df = self.data
+        else:
+            df = self.get_data()
+            
+        
         return _detection_distributions(
+            df = df,
             start_time = start_time if start_time else self.start_time,
             end_time = end_time if end_time else self.end_time,
             time_format = time_format,
-            min_a = self.min_a, 
-            max_a = self.max_a,
-            min_incl = self.min_incl,
-            max_incl = self.max_incl,
-            min_peri = self.min_peri, 
-            max_peri = self.max_peri, 
-            min_e = self.min_e, 
-            max_e = self.max_e
         )
     
     #add _orbital_relations
@@ -54,10 +119,30 @@ class Collection():
         # plot orbits of all items. Nice to animate in the future
         #objects_in_field
         
-        return objects_in_field(
-            filters = filters,
+        '''
+        currently specifying start and end, could have additional as long as they are in the range from the dataframe or make a new call.
+        
+        start_time, end_time = validate_times(
             start_time = start_time if start_time else self.start_time,
             end_time = end_time if end_time else self.end_time,
+        )
+        '''
+        
+        if self.lazy_loading:
+            if self.data is None:
+                df = self.get_data() #provide only necessary columns
+            else:
+                df = self.data
+        else:
+            df = self.get_data()
+        
+        
+        
+        return objects_in_field(
+            df,
+            filters = filters,
+            start_time = start_time,
+            end_time = end_time,
             title = title,
             time_format = time_format,
             projection = projection,
@@ -80,6 +165,18 @@ class Collection():
                          colorbar: bool = True,
                          plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter"
                          ):
+        
+        if x == "a":
+            qx = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
+        else:
+            qx = mpcorb.c[x]
+        
+        if y == "a":
+            qy = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
+        else:
+            qy = mpcorb.c[y]
+        
+        
         
         return _orbital_relations(x = x, y = y, 
                                   start_time = start_time if start_time else self.start_time, 
@@ -167,5 +264,9 @@ class Collection():
             )
         
         #getter setter for __init__ that calls functions and updates plots
-    
+        
+    def clear(self):
+        #clear all the dataframes
+        return
+        
     

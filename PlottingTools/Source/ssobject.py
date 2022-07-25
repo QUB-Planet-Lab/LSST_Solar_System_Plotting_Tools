@@ -326,7 +326,6 @@ class Object():
     
     def clear(
         self,
-        #add_optionality for which dataframes to clear?
         curve_df : Optional[bool] = True,
         orbit_df : Optional[bool] = True
     ):

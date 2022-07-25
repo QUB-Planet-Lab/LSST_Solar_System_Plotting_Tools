@@ -143,7 +143,7 @@ def objects_in_field(
             lc.ax.set_ylabel("Y (au)")
             lc.ax.set_zlabel("Z (au)")
             lc.ax.set_title(title if title else f"{mpcdesignation if mpcdesignation else ssobjectid if ssobjectid else ''} Orbit plot")
-
+    
     return lc
     
     

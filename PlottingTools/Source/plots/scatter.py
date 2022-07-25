@@ -30,7 +30,8 @@ class ScatterPlot(Plot):
                 self.plot = self.ax.errorbar(x = data[x], y = data[y], yerr=yerr if len(yerr) else None, xerr=xerr if len(xerr) else None, fmt='o')
             else:
                 if library == "seaborn":
-                    self.plot = sns.scatterplot(data = data, x = x, y = y, ax = self.ax).set(xlabel=None, ylabel = None)
+                    self.plot = sns.scatterplot(data = data, x = x, y = y, ax = self.ax)
+                    self.plot.set(xlabel=None, ylabel = None)
                 else:
                     self.plot = self.ax.scatter(x = data[x], y = data[y])
 

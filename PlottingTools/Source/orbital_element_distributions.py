@@ -34,7 +34,8 @@ ELEMENTS = {'e' : {'label': 'Eccentricity','unit' : None},\
 
 def _tisserand_relations(
     y : Literal["incl", "q", "e", "a"],
-    start_time : Optional[float] = None, end_time : Optional[float] = None,
+    start_time : Optional[float] = None,
+    end_time : Optional[float] = None,
     title : Optional[str] = None,
     plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
     **orbital_elements
@@ -43,6 +44,7 @@ def _tisserand_relations(
     
     if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
         raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
+        
     conditions = []
     
     if start_time:
@@ -70,7 +72,6 @@ def _tisserand_relations(
             distinct(mpcorb.c['ssobjectid']), qy, tisserand,
             diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
-        
         ).where(
                 *conditions
         )
