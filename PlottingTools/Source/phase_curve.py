@@ -18,57 +18,54 @@ from sbpy.photometry import HG
 
 FIT = [None, 'HG']
 
-def _phase_curve(filters: Optional[list] = None,
+def _phase_curve(
+                df, #dataframe
+                filters: Optional[list] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
                 mpcdesignation: Optional[str] = None,
                 ssobjectid: Optional[int] = None,
                 library : Optional[str] = "matplotlib",
                 fit = None # FIT
-
 ):
-
-    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+    
+    #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
     
     if fit not in FIT:
         raise Exception(f"{fit} is not a valid fit option. Valid options include {FIT}")
         
-
-    cols = [diasource.c['magsigma'], diasource.c['filter'], mpcorb.c['mpcdesignation'], diasource.c['ssobjectid'], diasource.c['midpointtai'],diasource.c['mag'], sssource.c['phaseangle'], sssource.c['topocentricdist'], sssource.c['heliocentricdist']]
+    
+    #cols = [diasource.c['magsigma'], diasource.c['filter'], mpcorb.c['mpcdesignation'], diasource.c['ssobjectid'], diasource.c['midpointtai'],diasource.c['mag'], sssource.c['phaseangle'], sssource.c['topocentricdist'], sssource.c['heliocentricdist']]
     
     
-    conditions = []
+    #conditions = []
     
-    if filters:
+    #if filters:
         
-        filters = validate_filters(list(set(filters)))
-        conditions.append(diasource.c['filter'].in_(filters))
+        #filters = validate_filters(list(set(filters)))
+        #conditions.append(diasource.c['filter'].in_(filters))
         
-        #conditions.append(diasource.c['filter'] == filter)
         
-        for _filter in filters:
-            calc_mags = [ssobjects.c[f'{_filter}h'], ssobjects.c[f'{_filter}g12'], ssobjects.c[f'{_filter}herr'], ssobjects.c[f'{_filter}g12err'], ssobjects.c[f'{_filter}chi2']]
-            for item in calc_mags:              
-                cols.append(item)
+        #for _filter in filters:
+            #calc_mags = [ssobjects.c[f'{_filter}h'], ssobjects.c[f'{_filter}g12'], ssobjects.c[f'{_filter}herr'], ssobjects.c[f'{_filter}g12err'], ssobjects.c[f'{_filter}chi2']]
+            #for item in calc_mags:              
+            #    cols.append(item)
         
-    if mpcdesignation:
-        conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
+    #if mpcdesignation:
+    #    conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
    
-    if ssobjectid:
-        conditions.append(mpcorb.c['ssobjectid'] == ssobjectid)
+    #if ssobjectid:
+    #   conditions.append(mpcorb.c['ssobjectid'] == ssobjectid)
     
-    if start_time:
-        conditions.append(diasource.c['midpointtai'] >= start_time)
     
-    if end_time:
-        conditions.append(diasource.c['midpointtai'] <= end_time)
+        
+    #stmt = select(*cols).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
     
-    stmt = select(*cols).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
+    #df = db.query(
+    #    stmt
+    #)
     
-    df = db.query(
-        stmt
-    )
-    
+    '''
     if df.empty:
         query = f"""No results returned for your query:\n"""
         if filters:
@@ -86,12 +83,11 @@ def _phase_curve(filters: Optional[list] = None,
     
         print(query)
         return
+    '''
     
     
     
     df["cmag"] = df["mag"] - 5*np.log10(df["topocentricdist"]*df["heliocentricdist"])
-    
-    
     
     if filters:
         #note is yerr = 'magsigma'?
@@ -100,7 +96,6 @@ def _phase_curve(filters: Optional[list] = None,
                          
         for _filter in filters:
             df_filter = df[df['filter'] == _filter]
-             
             if not df_filter.empty:
                 pc.ax.errorbar(data = df_filter , x = "phaseangle", y = "cmag", yerr=df_filter['magsigma'], label=_filter, marker=FILTER_SYMBOLS[_filter], c = COLOR_SCHEME[_filter], ls = 'none')
                 

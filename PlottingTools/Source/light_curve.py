@@ -18,7 +18,9 @@ from plots.styles.filter_symbols import FILTER_SYMBOLS
 
 
 
-def _light_curve(filters: Optional[list] = None,
+def _light_curve(
+                df,   
+                filters: Optional[list] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
                 mpcdesignation: Optional[str] = None,
@@ -26,14 +28,14 @@ def _light_curve(filters: Optional[list] = None,
                 time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                 library: Optional[str] = "matplotlib"
                ):
-        
-    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+    print(start_time)    
+    #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
     
-    if not ssobjectid and not mpcdesignation:
+    #if not ssobjectid and not mpcdesignation:
         # More needed to handle when both when ssobjectid and mpcdesingation is specified?
-        raise Exception("You must provide either an mpcdesignation or an ssobjectid to this function")
+        #raise Exception("You must provide either an mpcdesignation or an ssobjectid to this function")
         
-    
+    '''
     cols = [
             diasource.c['magsigma'],
             diasource.c['filter'],
@@ -42,36 +44,39 @@ def _light_curve(filters: Optional[list] = None,
             diasource.c['mag'],
             diasource.c['ssobjectid'],
            ]
+    '''
     
-    conditions = []
+    #conditions = []
     
-    if filters:
+    #if filters:
+        #filters = validate_filters(list(set(filters)))
+        #conditions.append(diasource.c['filter'].in_(filters))
         
-        filters = validate_filters(list(set(filters)))
-        conditions.append(diasource.c['filter'].in_(filters))
-    
         
-    if mpcdesignation:
-        conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
+    #if mpcdesignation:
+    #    conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
    
-    if ssobjectid:
-        conditions.append(mpcorb.c['ssobjectid'] == ssobjectid)
+    #if ssobjectid:
+    #    conditions.append(mpcorb.c['ssobjectid'] == ssobjectid)
     
-    if start_time:
-        conditions.append(diasource.c['midpointtai'] >= start_time)
+    #if start_time:
+    #    conditions.append(diasource.c['midpointtai'] >= start_time)
     
-    if end_time:
-        conditions.append(diasource.c['midpointtai'] <= end_time)
-    stmt = select(
-            *cols
-            ).\
-        join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+    #if end_time:
+        #conditions.append(diasource.c['midpointtai'] <= end_time)
+    
+    #stmt = select(
+    #        *cols
+    #        ).\
+    #    join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     
     #if _filter:
     #    stmt.join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     
+    '''
     stmt = select(*cols).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).where(*conditions)
     # No need for third join currently
+    
     
     df = db.query(
              stmt
@@ -95,6 +100,7 @@ def _light_curve(filters: Optional[list] = None,
         
         print(query)
         return # Is this the best way to return no results?
+    '''
     
     if time_format == 'ISO':
         df['datetimes'] = pd.to_datetime(format_times(df['midpointtai'].to_list(), _format = "ISO"))
@@ -106,11 +112,8 @@ def _light_curve(filters: Optional[list] = None,
     
     
     if filters:
-        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}", xlabel = xlabel, ylabel="Magnitude", library = library)
+        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel = xlabel, ylabel="Magnitude", library = library)
 
-    
-    
-    
         for _filter in filters:
             df_filter = df[df['filter'] == _filter]
             if not df_filter.empty:
@@ -119,7 +122,7 @@ def _light_curve(filters: Optional[list] = None,
         lc.ax.legend(loc="upper right")        
 
     else:
-        lc = ScatterPlot(data = df , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n {start_time} - {end_time}", xlabel = xlabel, ylabel="Magnitude", library = library)
+        lc = ScatterPlot(data = df , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel = xlabel, ylabel="Magnitude", library = library)
         
     lc.fig.autofmt_xdate()
     lc.ax.invert_yaxis()

@@ -6,27 +6,55 @@ from objects_in_field import objects_in_field
 from typing import Optional, Literal
 
 from sqlalchemy import select
-from database.schemas import mpcorb
+from database.schemas import mpcorb, sssource, diasource, ssobjects
 from math import cos, sqrt
 from typing import Optional
 
 import requests
 import pandas as pd
 
+from database.validators import validate_times, validate_filters
+FILTERS = ["g", "r", "i", "z", "y", "u"]
 class Object():
-    def __init__(self, ssobjectid: Optional[str] = None, mpcdesignation: Optional[str] = None): # diasourceid?
-        #https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=1999%20AN10
+    #lazy_loading
+    
+    
+    def __init__(self, ssobjectid: Optional[str] = None, mpcdesignation: Optional[str] = None, lazy_loading : Optional[bool] = True): 
         
-        #https://cneos.jpl.nasa.gov/about/neo_groups.html
-        
+        self.lazy_loading = lazy_loading
         
         self.mpcdesignation = mpcdesignation
         
         self.ssobjectid = str(ssobjectid) if ssobjectid else None
-        
-        
+          
         self.T_J = None
         
+        # Not sure if I can have two statements executed at once or open two connections with separate queries here.
+        
+        self.cols = [
+            sssource.c['heliocentricx'],
+            sssource.c['heliocentricy'],
+            sssource.c['heliocentricz'],
+            sssource.c['phaseangle'],
+            sssource.c['topocentricdist'],
+            sssource.c['heliocentricdist'],
+            
+            mpcorb.c['mpcdesignation'],
+            
+            diasource.c['ssobjectid'],
+            diasource.c['filter'],
+            diasource.c['magsigma'],
+            diasource.c['mag'],
+            diasource.c['midpointtai'], 
+           ]
+        
+        for _filter in FILTERS:
+                calc_mags = [ssobjects.c[f'{_filter}h'], ssobjects.c[f'{_filter}g12'], ssobjects.c[f'{_filter}herr'], ssobjects.c[f'{_filter}g12err'], ssobjects.c[f'{_filter}chi2']]
+                
+                for item in calc_mags:              
+                    self.cols.append(item)
+       
+    
         stmt = select(mpcorb.c["e"], mpcorb.c["q"], mpcorb.c["peri"],# 
                    mpcorb.c["incl"], mpcorb.c["node"],
                    mpcorb.c["n"], mpcorb.c["epoch"], mpcorb.c['ssobjectid'], mpcorb.c['mpcdesignation'],  mpcorb.c['mpcnumber'], mpcorb.c['fulldesignation']  #mpcorb.c["m"]
@@ -57,21 +85,52 @@ class Object():
 
             self.mpcdesignation = self.orbital_parameters['mpcdesignation'][0].strip()
             
-        
         self.orbital_parameters = self.orbital_parameters.drop(['mpcdesignation', 'ssobjectid', 'mpcnumber', 'fulldesignation'], axis=1)
-        
         
         try:
             self.orbital_parameters["a"] = self.orbital_parameters["q"] / (1 - self.orbital_parameters["e"])
         except:
-            self.orbital_parameters["a"] = None
+            self.orbital_parameters["a"] = None # None acceptable for now, may need refined
             
         try:
             self.orbital_parameters["Q"] = self.orbital_parameters["q"] * ((1 + self.orbital_parameters["e"])/ (1 - self.orbital_parameters["e"]))
         
         except:
             self.orbital_parameters["Q"] = None
+    
+    
+        if lazy_loading == False:
+            #load all data now
+            #self.curve
+            #self.orbit_data 
+            
+            self.data = db.query(
+                select(*self.cols).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation)
+            )
+            
+            #return empty dataframe if none
+            if self.data.empty:
+                return # empty response
+        else:
+            self.data = None
+            
+            
+            
+    def get_curve_data(self): # rename
         
+        
+        
+        
+        df = db.query(
+                select(*self.cols).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation)
+            )
+        
+        if df.empty:
+            #add empty response
+            return 
+        
+        return df
+    
     @property
     def tisserand(self):
         if not self.T_J:
@@ -86,7 +145,116 @@ class Object():
                 return
         else:
             return self.T_J
+
+    def phase_curve(self, 
+                    start_time: Optional[float] = None, 
+                    end_time : Optional[float] = None,
+                    filters: Optional[list] = None,
+                    title : Optional[str] = None,
+                    library : Optional[str] = "matplotlib",
+                    fit = None,                    
+                   ):
+        
+        if self.lazy_loading == True:
+            #check if data exists first
+            if not self.data:
+                # get data
+                df = self.get_curve_data()
+                
+            else: # clean-up names here
+                df = self.data.copy(deep = True)
+        else:
+            df = self.data.copy(deep = True)
+
+        # work on replot
+        
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        
+        if filters:
+            filters = validate_filters(list(set(filters)))
+        
+        if start_time:
+            df = df.loc[df['midpointtai'] >= start_time].copy() # copy() silences warnings ~ effect on performance needs evaluated
+        if end_time:
+            df = df.loc[df['midpointtai'] <= end_time].copy()
+        
+        return _phase_curve(
+            mpcdesignation = self.mpcdesignation,
+            ssobjectid = self.ssobjectid,
+            df = df,
+            filters = filters,
+            title = title,
+            library = library,
+            fit = fit
+        )
+        
     
+    def light_curve(self, 
+                    filters: Optional[list] = None,
+                    start_time : Optional[float] = None, end_time : Optional[float] = None,
+                    title : Optional[str] = None,
+                    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
+                    library: Optional[str] = "matplotlib"
+                   ):
+        if self.lazy_loading == True:
+            if not self.data:
+                # get data
+                df = self.get_curve_data()
+                
+            else: # clean-up names here
+                #data already here...
+                df = self.data.copy(deep = True)
+        else:
+            df = self.data.copy(deep = True)
+                    
+        # work on replot
+        
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        
+        if filters:
+            filters = validate_filters(list(set(filters)))
+        
+        if start_time:
+            df = df.loc[df['midpointtai'] >= start_time].copy() # copy() silences warnings ~ effect on performance needs evaluated
+        if end_time:
+            df = df.loc[df['midpointtai'] <= end_time].copy()
+        
+        
+        return _light_curve(
+            df = df,
+            mpcdesignation = self.mpcdesignation,
+            ssobjectid = self.ssobjectid,
+            filters = filters,
+            start_time = start_time,
+            end_time = end_time,
+            title = title,
+            time_format = time_format,
+            library = library
+        )
+    
+    def plot_orbit(self,
+                filters: Optional[list] = None,
+                start_time : Optional[float] = None, end_time : Optional[float] = None,
+                title : Optional[str] = None,
+                time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
+                projection: Optional[Literal['2d', '3d']] = '2d',
+                library: Optional[str] = "matplotlib",
+                **orbital_elements
+                ): 
+                # nice to animate this aswell with theoretical data if available
+            
+        return objects_in_field(
+            mpcdesignation = self.mpcdesignation,
+            ssobjectid = self.ssobjectid,
+            filters = filters,
+            start_time = start_time,
+            end_time = end_time,
+            title = title,
+            time_format = time_format,
+            projection = projection,
+            library = library,
+            **orbital_elements
+        )
     
     def find_jpl_matches(self, limit : Optional[int] = 20):
         t_j = round(self.tisserand, 3)
@@ -122,69 +290,5 @@ class Object():
         else:
                            print("Cannot find the object given by ...")
      '''       
-                            
-        
-    
-    def phase_curve(self, 
-                    start_time: Optional[float] = None, 
-                    end_time : Optional[float] = None,
-                    filters: Optional[list] = None,
-                    title : Optional[str] = None,
-                    library : Optional[str] = "matplotlib",
-                    fit = None
-                   ):
-        
-        return _phase_curve(
-            mpcdesignation = self.mpcdesignation,
-            ssobjectid = self.ssobjectid,
-            start_time = start_time,
-            end_time = end_time,
-            filters = filters,
-            title = title,
-            library = library,
-            fit = fit
-        )
-        
-    
-    def light_curve(self, 
-                    filters: Optional[list] = None,
-                    start_time : Optional[float] = None, end_time : Optional[float] = None,
-                    title : Optional[str] = None,
-                    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
-                    library: Optional[str] = "matplotlib"
-                   ):
-        return _light_curve(
-            mpcdesignation = self.mpcdesignation,
-            ssobjectid = self.ssobjectid,
-            filters = filters,
-            start_time = start_time,
-            end_time = end_time,
-            title = title,
-            time_format = time_format,
-            library = library
-        )
-    
-    def plot_orbit(self,
-                filters: Optional[list] = None,
-                start_time : Optional[float] = None, end_time : Optional[float] = None,
-                title : Optional[str] = None,
-                time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
-                projection: Optional[Literal['2d', '3d']] = '2d',
-                library: Optional[str] = "matplotlib",
-                **orbital_elements
-                ): 
-                # nice to animate this aswell with theoretical data if available
-        return objects_in_field(
-            mpcdesignation = self.mpcdesignation,
-            ssobjectid = self.ssobjectid,
-            filters = filters,
-            start_time = start_time,
-            end_time = end_time,
-            title = title,
-            time_format = time_format,
-            projection = projection,
-            library = library,
-            **orbital_elements
-        )
         
     
