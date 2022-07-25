@@ -22,6 +22,7 @@ from typing import Optional, Literal
 import pandas as pd
 
 def objects_in_field(
+    df,
     filters: Optional[list] = None,
     start_time : Optional[float] = None, end_time : Optional[float] = None,
     title : Optional[str] = None,
@@ -33,7 +34,7 @@ def objects_in_field(
     **orbital_elements
 ):
     
-    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+    '''
     cols = [
             diasource.c['filter'],
             diasource.c['midpointtai'], 
@@ -41,16 +42,15 @@ def objects_in_field(
             sssource.c['heliocentricy'],
             sssource.c['heliocentricz'],
            ]
+    '''
+    #conditions = []
     
-    conditions = []
     
-    
-    if filters:
+    #if filters:
         
-        filters = validate_filters(list(set(filters)))
-        conditions.append(diasource.c['filter'].in_(filters))
-    
-        
+        #filters = validate_filters(list(set(filters)))
+        #conditions.append(diasource.c['filter'].in_(filters))
+    '''    
     if mpcdesignation:
         conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
    
@@ -62,19 +62,15 @@ def objects_in_field(
     
     if end_time:
         conditions.append(diasource.c['midpointtai'] <= end_time)
-    stmt = select(
-            *cols
-            ).\
-        join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+    '''
     
     if projection:
         projection = projection.lower()
     
+       
+    #conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
         
-    conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
-        
-    
-    
+    '''
     stmt = select(*cols).join(mpcorb, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
 
     # No need for third join currently
@@ -82,7 +78,9 @@ def objects_in_field(
     df = db.query(
              stmt
     )
+    '''
     
+    '''
     if df.empty:
         if df.empty:
             query = f"""No results returned for your query:\n"""
@@ -101,13 +99,16 @@ def objects_in_field(
         
         print(query)
         return # Is this the best way to return no results?
-    
+    '''
     
     if filters:
         lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz" , projection = projection, library = library)
-
-        lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black") ## add sun and earth?
-
+    
+        if projection == "3d":
+                lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black") ## add sun and earth?
+        else:
+                lc.ax.scatter(x = [0], y = [0], c = "black") ## add sun and earth?
+        
         for _filter in filters:
             df_filter = df[df['filter'] == _filter]
             
@@ -122,7 +123,8 @@ def objects_in_field(
                    
         lc.ax.set_xlabel("X (au)")
         lc.ax.set_ylabel("Y (au)")
-        lc.ax.set_zlabel("Z (au)")
+        if projection == "3d":
+            lc.ax.set_zlabel("Z (au)")
         lc.ax.set_title(title if title else f"{mpcdesignation if mpcdesignation else ssobjectid if ssobjectid else ''} Orbit plot")            
         lc.ax.legend(loc="upper right")
                     
@@ -133,8 +135,6 @@ def objects_in_field(
             lc.ax.set_xlabel("X (au)")
             lc.ax.set_ylabel("Y (au)")    
             lc.ax.set_title(title if title else f"{mpcdesignation if mpcdesignation else ssobjectid if ssobjectid else ''} Orbit plot")
-            
-            
 
         elif projection == '3d':
             lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", z = "heliocentricz", projection = '3d', library = library)

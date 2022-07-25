@@ -104,32 +104,63 @@ class Object():
             #self.curve
             #self.orbit_data 
             
-            self.data = db.query(
+            self.curve_df = db.query( # self.get_curve_data()
                 select(*self.cols).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation)
             )
             
             #return empty dataframe if none
-            if self.data.empty:
-                return # empty response
-        else:
-            self.data = None
+            if self.curve_df.empty:
+                #add_empty response
+                pass # empty response
             
+            # Need to narrow down queries
+            
+            self.orbit_df = db.query( 
+                select(diasource.c['filter'],
+                    diasource.c['midpointtai'], 
+                    sssource.c['heliocentricx'],
+                    sssource.c['heliocentricy'],
+                    sssource.c['heliocentricz']).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation)
+            )
+            if self.orbit_df.empty:
+                #add_empty response
+                pass
+                #return # empty response
+        
+        else:
+            #better names required??
+            self.curve_df = None
+            self.orbit_df = None 
+        
             
             
     def get_curve_data(self): # rename
         
-        
-        
-        
-        df = db.query(
+        self.curve_df = db.query(
                 select(*self.cols).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation)
             )
         
-        if df.empty:
+        if self.curve_df.empty:
             #add empty response
             return 
         
-        return df
+        return self.curve_df
+    
+    
+    def get_orbit_data(self):
+        self.orbit_df = db.query( 
+                select(diasource.c['filter'],
+                    diasource.c['midpointtai'], 
+                    sssource.c['heliocentricx'],
+                    sssource.c['heliocentricy'],
+                    sssource.c['heliocentricz']).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation))
+            
+        if self.orbit_df.empty:
+                #add_empty response
+                pass
+            
+        return self.orbit_df
+            
     
     @property
     def tisserand(self):
@@ -157,14 +188,14 @@ class Object():
         
         if self.lazy_loading == True:
             #check if data exists first
-            if not self.data:
+            if self.curve_df is None:
                 # get data
                 df = self.get_curve_data()
                 
             else: # clean-up names here
-                df = self.data.copy(deep = True)
+                df = self.curve_df.copy(deep = True) # not sure if this is optimal to make copies
         else:
-            df = self.data.copy(deep = True)
+            df = self.curve_df.copy(deep = True)
 
         # work on replot
         
@@ -197,15 +228,15 @@ class Object():
                     library: Optional[str] = "matplotlib"
                    ):
         if self.lazy_loading == True:
-            if not self.data:
+            if self.curve_df is None:
                 # get data
                 df = self.get_curve_data()
                 
             else: # clean-up names here
                 #data already here...
-                df = self.data.copy(deep = True)
+                df = self.curve_df.copy(deep = True)
         else:
-            df = self.data.copy(deep = True)
+            df = self.curve_df.copy(deep = True)
                     
         # work on replot
         
@@ -239,13 +270,36 @@ class Object():
                 time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                 projection: Optional[Literal['2d', '3d']] = '2d',
                 library: Optional[str] = "matplotlib",
-                **orbital_elements
+                **orbital_elements # is orbital elements needed?
                 ): 
                 # nice to animate this aswell with theoretical data if available
+        
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        
+        if filters:
+            filters = validate_filters(list(set(filters)))
             
+        if self.lazy_loading == True:
+            if self.orbit_df is None:
+                # get data
+                df = self.get_orbit_data()
+                
+            else: # clean-up names here
+                #data already here...
+                df = self.orbit_df.copy(deep = True)
+        else:
+            df = self.orbit_df.copy(deep = True)
+            
+        if start_time:
+            df = df.loc[df['midpointtai'] >= start_time].copy() # copy() silences warnings ~ effect on performance needs evaluated
+        if end_time:
+            df = df.loc[df['midpointtai'] <= end_time].copy()
+        
+
         return objects_in_field(
-            mpcdesignation = self.mpcdesignation,
-            ssobjectid = self.ssobjectid,
+            df = df,
+            #mpcdesignation = self.mpcdesignation,
+            #ssobjectid = self.ssobjectid,
             filters = filters,
             start_time = start_time,
             end_time = end_time,
@@ -269,6 +323,20 @@ class Object():
         df = pd.DataFrame.from_records(resp)
 
         return df
+    
+    def clear(
+        self,
+        #add_optionality for which dataframes to clear?
+        curve_df : Optional[bool] = True,
+        orbit_df : Optional[bool] = True
+    ):
+        if curve_df:
+            self.curve_df = None
+        if orbit_df:
+            self.orbit_df = None
+        
+        return
+    
     '''
     # TODO
     @property
