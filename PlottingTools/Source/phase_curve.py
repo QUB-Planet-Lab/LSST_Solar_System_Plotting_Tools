@@ -16,6 +16,7 @@ import numpy as np
 
 from sbpy.photometry import HG
 
+    
 FIT = [None, 'HG']
 
 def _phase_curve(
@@ -31,7 +32,6 @@ def _phase_curve(
 ):
     
     #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
-    
     if fit not in FIT:
         raise Exception(f"{fit} is not a valid fit option. Valid options include {FIT}")
         
@@ -88,7 +88,7 @@ def _phase_curve(
     
     
     
-    df["cmag"] = df["mag"] - 5*np.log10(df["topocentricdist"]*df["heliocentricdist"])
+    
     
     if filters:
         #note is yerr = 'magsigma'?
@@ -105,7 +105,7 @@ def _phase_curve(
                     _mag = HG.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12err'])
                     pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter])               
             pc.ax.legend(loc="upper right")        
-
+            pc.data = df
     else:
         pc = ScatterPlot(data = df, x = "phaseangle", y="cmag", yerr=df["magsigma"], title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel=f"Phase Angle ({DEGREE})", ylabel="Reduced Magnitude", library = library, cache_data = cache_data)
 

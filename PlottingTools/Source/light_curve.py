@@ -16,7 +16,7 @@ import pandas as pd
 from plots.styles.filter_color_scheme import COLOR_SCHEME
 from plots.styles.filter_symbols import FILTER_SYMBOLS
 
-
+pd.options.mode.chained_assignment = None  # default='warn'
 
 def _light_curve(
                 df,   
@@ -110,7 +110,6 @@ def _light_curve(
         x = "midpointtai"
         xlabel = "Time (MJD)"
     
-    
     if filters:
         lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel = xlabel, ylabel="Magnitude", library = library, cache_data = cache_data)
 
@@ -120,12 +119,13 @@ def _light_curve(
                 lc.ax.errorbar(data = df_filter , x = x, y = "mag", yerr=df_filter['magsigma'], label=_filter, c = COLOR_SCHEME[_filter], marker=FILTER_SYMBOLS[_filter], ls='none')
         # add filter to plot
         lc.ax.legend(loc="upper right")        
-
+        lc.data = df
     else:
         lc = ScatterPlot(data = df , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel = xlabel, ylabel="Magnitude", library = library, cache_data = cache_data)
         
     lc.fig.autofmt_xdate()
     lc.ax.invert_yaxis()
+    
     return lc
         
 

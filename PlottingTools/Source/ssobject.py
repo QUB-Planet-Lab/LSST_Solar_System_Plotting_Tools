@@ -12,6 +12,7 @@ from typing import Optional
 
 import requests
 import pandas as pd
+import numpy as np
 
 from database.validators import validate_times, validate_filters
 FILTERS = ["g", "r", "i", "z", "y", "u"]
@@ -202,19 +203,24 @@ class Object():
         # work on replot
         
         start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
-        
+        filter_cols = []
         if filters:
             filters = validate_filters(list(set(filters)))
-        
+            for _filter in filters:
+                filter_cols.extend([f'{_filter}h', f'{_filter}g12err'])
+                
         if start_time:
             df = df.loc[df['midpointtai'] >= start_time].copy() # copy() silences warnings ~ effect on performance needs evaluated
         if end_time:
             df = df.loc[df['midpointtai'] <= end_time].copy()
         
+        df["cmag"] = df["mag"] - 5*np.log10(df["topocentricdist"]*df["heliocentricdist"])
+        print(df[['filter','mag', 'magsigma', 'topocentricdist', 'heliocentricdist', 'phaseangle', "cmag",*filter_cols]])
+        
         return _phase_curve(
             mpcdesignation = self.mpcdesignation,
             ssobjectid = self.ssobjectid,
-            df = df,
+            df = df[['filter','mag', 'magsigma', 'topocentricdist', 'heliocentricdist', 'phaseangle', "cmag",*filter_cols]],
             filters = filters,
             title = title,
             library = library,
@@ -257,7 +263,7 @@ class Object():
         
         
         return _light_curve(
-            df = df,
+            df = df[['filter', 'mag', 'midpointtai', 'magsigma']],
             mpcdesignation = self.mpcdesignation,
             ssobjectid = self.ssobjectid,
             filters = filters,
@@ -304,7 +310,7 @@ class Object():
         
 
         return objects_in_field(
-            df = df,
+            df = df[['filter','heliocentricx', 'heliocentricy', 'heliocentricz']],
             #mpcdesignation = self.mpcdesignation,
             #ssobjectid = self.ssobjectid,
             filters = filters,
