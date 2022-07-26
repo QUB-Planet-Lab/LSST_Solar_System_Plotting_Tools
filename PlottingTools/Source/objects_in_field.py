@@ -31,6 +31,7 @@ def objects_in_field(
     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
     projection: Optional[Literal['2d', '3d']] = '2d',
     library : Optional[str] = "seaborn",
+    cache_data: Optional[bool] = False,
     **orbital_elements
 ):
     

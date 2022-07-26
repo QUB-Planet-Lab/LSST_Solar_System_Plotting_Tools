@@ -26,9 +26,9 @@ def _light_curve(
                 mpcdesignation: Optional[str] = None,
                 ssobjectid: Optional[int] = None,
                 time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
-                library: Optional[str] = "matplotlib"
+                library: Optional[str] = "matplotlib",
+                cache_data: Optional[bool] = False
                ):
-    print(start_time)    
     #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
     
     #if not ssobjectid and not mpcdesignation:
@@ -112,7 +112,7 @@ def _light_curve(
     
     
     if filters:
-        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel = xlabel, ylabel="Magnitude", library = library)
+        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel = xlabel, ylabel="Magnitude", library = library, cache_data = cache_data)
 
         for _filter in filters:
             df_filter = df[df['filter'] == _filter]
@@ -122,7 +122,7 @@ def _light_curve(
         lc.ax.legend(loc="upper right")        
 
     else:
-        lc = ScatterPlot(data = df , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel = xlabel, ylabel="Magnitude", library = library)
+        lc = ScatterPlot(data = df , x = x, y = "mag", title=title if title else f"{mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel = xlabel, ylabel="Magnitude", library = library, cache_data = cache_data)
         
     lc.fig.autofmt_xdate()
     lc.ax.invert_yaxis()

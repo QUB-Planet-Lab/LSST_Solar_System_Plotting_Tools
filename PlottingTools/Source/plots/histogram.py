@@ -11,8 +11,8 @@ LIBRARIES = ['matplotlib', 'seaborn']
 
     
 class HistogramPlot(Plot):
-    def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection : Literal['1d', '2d', '2d_hex'] = '1d', colorbar : bool = True, library = 'seaborn'):
-        super().__init__(data, xlabel, ylabel, title, library)
+    def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection : Literal['1d', '2d', '2d_hex'] = '1d', colorbar : bool = True, library = 'seaborn', cache_data: Optional[bool] = False):
+        super().__init__(data, xlabel, ylabel, title, library, cache_data)
         
         if library not in LIBRARIES:
             raise Exception(f"{library} is not a valid option for library. Valid options include {LIBRARIES}")

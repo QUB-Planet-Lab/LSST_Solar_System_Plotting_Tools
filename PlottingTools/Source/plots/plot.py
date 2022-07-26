@@ -11,11 +11,13 @@ import matplotlib.font_manager
 class Plot():
     '''A parent class which all plotting classes inherit from.'''
     
-    def __init__(self, data, xlabel : str = "", ylabel : str = "",  title: str = "", library : Optional[str] = "seaborn"):     #rc_params : dict = {}
+    def __init__(self, data, xlabel : str = "", ylabel : str = "",  title: str = "", library : Optional[str] = "seaborn", cache_data: Optional[bool] = False):     #rc_params : dict = {}
         
-        #validate library
-
-        self.data = data
+        if cache_data:
+            self.data = data
+        else:
+            self.data = None
+            
         self.library = library
         self.title = title
         

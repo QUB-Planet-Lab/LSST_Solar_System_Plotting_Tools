@@ -39,6 +39,7 @@ def _tisserand_relations(
     end_time : Optional[float] = None,
     title : Optional[str] = None,
     plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
+    cache_data: Optional[bool] = False,
     **orbital_elements
 ):
     start_time, end_time = validate_times(start_time = start_time, end_time = end_time)    
@@ -114,6 +115,7 @@ def _orbital_relations(
     title : Optional[str] = None,
     colorbar: bool = True,
     plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
+    cache_data: Optional[bool] = False,
     **orbital_elements
 ):
     
@@ -189,6 +191,7 @@ def base(
          plot_type: Literal[PLOT_TYPES] = 'BOX',
          title : Optional[str] = None,
          library: Optional[str] = "seaborn",
+         cache_data: Optional[bool] = False,
          **orbital_elements
         ):
     
@@ -290,7 +293,7 @@ def base(
 
         else:
             
-            plot_template = BoxPlot(**args, data = df, library = library)
+            plot_template = BoxPlot(**args, data = df, library = library, cache_data = cache_data)
             
             
             for median in plot_template.plot['medians']:
@@ -313,14 +316,14 @@ def base(
                 #print(args)
                 # decision on whether to have it only seaborn...
                 # fix colors, titles etc.
-                return ViolinPlot(data = df, library = library ,**args)
+                return ViolinPlot(data = df, library = library , cache_data = cache_data, **args)
             
             else:
                 data = []
                 for col in cols:
                     data.append(df[df["filter"] == col][element])
 
-                plot_template = ViolinPlot(**args, data = data) # not supported
+                plot_template = ViolinPlot(**args, data = data, cache_data = cache_data) # not supported
 
                 plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
 
@@ -344,7 +347,7 @@ def base(
         return plot_template
     
     else:
-        return BoxenPlot(**args, data= df)
+        return BoxenPlot(**args, data= df, cache_data = cache_data)
         
         
     
@@ -355,6 +358,7 @@ def eccentricity(
     end_time : Optional[float] = None,
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
+    cache_data: Optional[bool] = False,
     **orbital_elements
 ):
     
@@ -365,6 +369,7 @@ def eccentricity(
         plot_type = plot_type,
         title = title,
         element = 'e',
+        cache_data = cache_data,
         **orbital_elements
         #stmt = select(
         #    distinct(mpcorb.c['ssobjectid']), mpcorb.c['e'], diasource.c['filter']).join(
@@ -378,6 +383,7 @@ def perihelion(
     start_time : Optional[float] = None, end_time : Optional[float] = None,
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
+    cache_data: Optional[bool] = False,
     **orbital_elements
 ):
     print(df)
@@ -389,6 +395,7 @@ def perihelion(
         plot_type = plot_type,
         title = title,
         element = 'q',
+        cache_data = cache_data
             #stmt = select(distinct(mpcorb.c['ssobjectid']), mpcorb.c['q'], diasource.c['filter']).join(
             #diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
@@ -400,6 +407,7 @@ def inclination(
     start_time : Optional[float] = None, end_time : Optional[float] = None,
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
+    cache_data: Optional[bool] = False,
     **orbital_elements
 ):
     
@@ -412,6 +420,7 @@ def inclination(
         plot_type = plot_type,
         title = title,
         element = 'incl',
+        cache_data = cache_data
     )
     '''
     stmt = select(distinct(mpcorb.c['ssobjectid']),mpcorb.c['incl'], diasource.c['filter']).join(
@@ -426,6 +435,7 @@ def semi_major_axis(
     end_time : Optional[float] = None,
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
+    cache_data: Optional[bool] = False,
     **orbital_elements
 ):
 
@@ -436,7 +446,8 @@ def semi_major_axis(
         **orbital_elements,
         plot_type = plot_type,
         title = title,
-        element = 'a'
+        element = 'a',
+        cache_data = cache_data
     )
     '''
     stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['q'], (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(

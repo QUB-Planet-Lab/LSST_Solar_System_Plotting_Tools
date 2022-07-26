@@ -94,8 +94,11 @@ class Collection():
         return df
     
     
-    def detection_distributions(self, start_time : Optional[float] = None, end_time : Optional[float] = None,
-    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO'):
+    def detection_distributions(self,
+                                start_time : Optional[float] = None,
+                                end_time : Optional[float] = None,
+                                time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
+                                cache_data: Optional[bool] = False):
         # hex plots
         # fix for monthly and yearly
         
@@ -115,6 +118,7 @@ class Collection():
             start_time = start_time if start_time else self.start_time,
             end_time = end_time if end_time else self.end_time,
             time_format = time_format,
+            cache_data = cache_data
         )
     
     #add _orbital_relations
@@ -125,7 +129,8 @@ class Collection():
                      start_time : Optional[float] = None, end_time : Optional[float] = None,
                     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                     projection: Optional[Literal['2d', '3d']] = '2d',
-                    library: Optional[str] =  "seaborn"
+                    library: Optional[str] =  "seaborn",
+                    cache_data: Optional[bool] = False
                     ): 
         # plot orbits of all items. Nice to animate in the future
         #objects_in_field
@@ -162,6 +167,7 @@ class Collection():
             time_format = time_format,
             projection = projection,
             library = library,
+            cache_data = cache_data,
             min_a = self.min_a, 
             max_a = self.max_a,
             min_incl = self.min_incl,
@@ -178,7 +184,8 @@ class Collection():
                          start_time : Optional[float] = None, end_time : Optional[float] = None,
                          title : Optional[str] = None,
                          colorbar: bool = True,
-                         plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter"
+                         plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
+                         cache_data: Optional[bool] = False
                          ):
         
         
@@ -197,6 +204,7 @@ class Collection():
             start_time = start_time if start_time else self.start_time, 
             end_time = end_time if end_time else self.end_time,
             plot_type = plot_type, title = title,
+            cache_data = cache_data,
             min_a = self.min_a, max_a = self.max_a, 
             min_incl = self.min_incl, max_incl = self.max_incl, 
             min_peri = self.min_peri, max_peri = self.max_peri, 
@@ -209,6 +217,7 @@ class Collection():
                             start_time : Optional[float] = None, end_time : Optional[float] = None,
                             title : Optional[str] = None,
                             plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
+                            cache_data: Optional[bool] = False
                            ):
         
         df = self.check_data()
@@ -225,7 +234,10 @@ class Collection():
             y = y,  
             #start_time = start_time if start_time else self.start_time, 
             #end_time = end_time if end_time else self.end_time, 
-            title = title, plot_type = plot_type, min_a = self.min_a, 
+            title = title,
+            plot_type = plot_type,
+            cache_data = cache_data,
+            min_a = self.min_a, 
             max_a = self.max_a,
             min_incl = self.min_incl,
             max_incl = self.max_incl,
@@ -234,10 +246,10 @@ class Collection():
             min_e = self.min_e, 
             max_e = self.max_e
        )
-        
+        '''
         tr.ax.set_xlim(left = tr.data["tisserand"].min(), right = tr.data["tisserand"].max())
         tr.ax.set_ylim(bottom =  tr.data[y].min(), top = tr.data[y].max())
-        
+        '''
         return tr
 
     def orbital_param_distribution(self,
@@ -247,7 +259,8 @@ class Collection():
                                     end_time : Optional[float] = None,
                                     plot_type: Literal[PLOT_TYPES] = 'BOX',
                                     title : Optional[str] = None,
-                                   library: Optional[str] = "seaborn"
+                                    library: Optional[str] = "seaborn",
+                                    cache_data: Optional[bool] = False
                                   ):
         
         parameter = parameter.lower()
@@ -276,6 +289,7 @@ class Collection():
             plot_type = plot_type,
             #start_time = start_time if start_time else self.start_time,
             #end_time = end_time if end_time else self.end_time,
+            cache_data = cache_data,
             title = title,
             library = library,
             min_a = self.min_a, 

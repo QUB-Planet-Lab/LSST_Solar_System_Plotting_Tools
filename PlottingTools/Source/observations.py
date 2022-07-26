@@ -38,6 +38,7 @@ def _detection_distributions(
     title : Optional[str] = None,
     #todo - timeframe : Literal["day", "monthly", "year"] = "day",
     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
+    cache_data: Optional[bool] = False,
     **orbital_elements
 ):
     

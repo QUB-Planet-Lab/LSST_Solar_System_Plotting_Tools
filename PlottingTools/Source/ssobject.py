@@ -183,7 +183,9 @@ class Object():
                     filters: Optional[list] = None,
                     title : Optional[str] = None,
                     library : Optional[str] = "matplotlib",
-                    fit = None,                    
+                    cache_data: Optional[bool] = False,
+                    fit = None,     
+                    
                    ):
         
         if self.lazy_loading == True:
@@ -216,7 +218,8 @@ class Object():
             filters = filters,
             title = title,
             library = library,
-            fit = fit
+            fit = fit,
+            cache_data = cache_data
         )
         
     
@@ -225,7 +228,9 @@ class Object():
                     start_time : Optional[float] = None, end_time : Optional[float] = None,
                     title : Optional[str] = None,
                     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
-                    library: Optional[str] = "matplotlib"
+                    library: Optional[str] = "matplotlib",
+                    cache_data: Optional[bool] = False
+
                    ):
         if self.lazy_loading == True:
             if self.curve_df is None:
@@ -260,7 +265,8 @@ class Object():
             end_time = end_time,
             title = title,
             time_format = time_format,
-            library = library
+            library = library,
+            cache_data = cache_data
         )
     
     def plot_orbit(self,
@@ -270,6 +276,7 @@ class Object():
                 time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                 projection: Optional[Literal['2d', '3d']] = '2d',
                 library: Optional[str] = "matplotlib",
+                cache_data: Optional[bool] = False,
                 **orbital_elements # is orbital elements needed?
                 ): 
                 # nice to animate this aswell with theoretical data if available
@@ -307,6 +314,7 @@ class Object():
             time_format = time_format,
             projection = projection,
             library = library,
+            cache_data = cache_data,
             **orbital_elements
         )
     

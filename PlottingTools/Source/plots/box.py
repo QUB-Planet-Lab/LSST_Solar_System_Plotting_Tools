@@ -12,8 +12,8 @@ LIBARIES = ["seaborn"] # , "matplotlib"] # support seaborn currently
 
 class BoxPlot(Plot):
     # does specific functionality need to be removed from here?
-    def __init__(self, data, x = None, y = None, xlabel: str = "" , ylabel : str = "", title: str = "", rc_params : dict = {}, ax = None, library: Optional[str] = "seaborn"):
-        super().__init__(data, xlabel, ylabel, title, library)
+    def __init__(self, data, x = None, y = None, xlabel: str = "" , ylabel : str = "", title: str = "", rc_params : dict = {}, ax = None, library: Optional[str] = "seaborn", cache_data: Optional[bool] = False):
+        super().__init__(data, xlabel, ylabel, title, library, cache_data)
         
         self.x = x
         self.y = y
@@ -38,8 +38,8 @@ class BoxPlot(Plot):
             
     
 class BoxenPlot(Plot):
-    def __init__(self, data, x = None, y = None, xlabel: str = "" , ylabel : str = "", title: str = "", rc_params : dict = {}, ax = None, library : Optional[str] = "seaborn"):
-        super().__init__(data, xlabel, ylabel, title, library)
+    def __init__(self, data, x = None, y = None, xlabel: str = "" , ylabel : str = "", title: str = "", rc_params : dict = {}, ax = None, library : Optional[str] = "seaborn", cache_data: Optional[bool] = False):
+        super().__init__(data, xlabel, ylabel, title, library, cache_data)
         
         self.x = x
         self.y = y
