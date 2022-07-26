@@ -31,8 +31,8 @@ def _phase_curve(
                 cache_data: Optional[bool] = False
 ):
     
-    
-    fit = fit.upper()
+    if fit:
+        fit = fit.upper()
     
     if fit not in FIT:
         raise Exception(f"{fit} is not a valid fit option. Valid options include {FIT}")

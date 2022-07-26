@@ -211,7 +211,7 @@ class Object():
             df = df.loc[df['midpointtai'] <= end_time].copy()
         
         df["cmag"] = df["mag"] - 5*np.log10(df["topocentricdist"]*df["heliocentricdist"])
-        print(df[['filter','mag', 'magsigma', 'topocentricdist', 'heliocentricdist', 'phaseangle', "cmag",*filter_cols]])
+        
         
         return _phase_curve(
             mpcdesignation = self.mpcdesignation,

@@ -79,14 +79,12 @@ class Collection():
             'tisserand' : tisserand
         }
         
+        self.data = None
+
         if lazy_loading == False:
             #load data now.
-            self.data = self.get_data(self.cols)
+            self.data = self.get_data(list(self.table_columns.keys()))
     
-        else:
-            self.data = None
-        
-        
     def get_data(self, cols):
         # THIS DISTINCT WORKS
         
@@ -99,7 +97,6 @@ class Collection():
                         sssource, sssource.c['ssobjectid'] == mpcorb.c['ssobjectid']
                     ).distinct(mpcorb.c['ssobjectid']).where(*self.conditions)
                 )
-        #print(df)
         if self.data is None:
             self.data = df
         
@@ -140,10 +137,8 @@ class Collection():
                         
                 #df = self.data
         else:
-            #should be unnecessary
-            df = self.get_data(self.cols)
+            df = self.data #self.get_data(list(self.table_columns.keys()))
         return df
-    
     
     def detection_distributions(self,
                                 start_time : Optional[float] = None,
