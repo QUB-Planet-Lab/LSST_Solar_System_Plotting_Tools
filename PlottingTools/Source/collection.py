@@ -114,7 +114,7 @@ class Collection():
             
         
         return _detection_distributions(
-            df = df,
+            df = df[['midpointtai']],
             start_time = start_time if start_time else self.start_time,
             end_time = end_time if end_time else self.end_time,
             time_format = time_format,
@@ -155,11 +155,10 @@ class Collection():
         if filters:
             df = df.loc[df['filter'].isin(filters)].copy()
         
-        df = self.check_data()
         
         
         return objects_in_field(
-            df,
+            df[['filter', 'heliocentricx', 'heliocentricy', 'heliocentricz']],
             filters = filters,
             start_time = start_time,
             end_time = end_time,
@@ -198,7 +197,7 @@ class Collection():
             df = df.loc[df['midpointtai'] <= self.end_time].copy()
             
         return _orbital_relations(
-            df = df,
+            df = df[[x, y]],
             x = x, 
             y = y,
             start_time = start_time if start_time else self.start_time, 
@@ -230,7 +229,7 @@ class Collection():
             
         
         tr = _tisserand_relations(
-            df = df,
+            df = df[['tisserand', y]],
             y = y,  
             #start_time = start_time if start_time else self.start_time, 
             #end_time = end_time if end_time else self.end_time, 
@@ -284,7 +283,6 @@ class Collection():
             df = df.loc[df['filter'].isin(filters)].copy()
             
         args = dict(
-            df = df,
             filters = filters,
             plot_type = plot_type,
             #start_time = start_time if start_time else self.start_time,
@@ -304,18 +302,22 @@ class Collection():
         
         if parameter == "eccentricity":
             return eccentricity(
+                df[['filter', 'e']],
                 **args
             )
         if parameter == "inclination":
             return inclination(
+                df[['filter', 'incl']], 
                 **args
             )
         if parameter == "semi_major_axis":
             return semi_major_axis(
+                df[['filter', 'a']], 
                 **args
             )
         if parameter == "perihelion":
             return perihelion(
+                df[['filter', 'q']], 
                 **args
             )
         
