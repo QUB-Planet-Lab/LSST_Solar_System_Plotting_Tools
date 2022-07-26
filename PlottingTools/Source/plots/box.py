@@ -29,7 +29,8 @@ class BoxPlot(Plot):
             # add optionality to have the boxes vertically aligned?
             
             if library == "seaborn":
-                self.plot = sns.boxplot(data = data, x = self.x, y = self.y, ax = self.ax).set(xlabel = None, ylabel = None)
+                self.plot = sns.boxplot(data = data, x = self.x, y = self.y, ax = self.ax)
+                #self.plot.set(xlabel = None, ylabel = None)
                 
             else: 
                 self.plot = self.ax.boxplot(x = data, vert=False, patch_artist=True)
@@ -46,7 +47,8 @@ class BoxenPlot(Plot):
         if not y:
             self.plot = sns.boxenplot(x = data[self.x], ax = self.ax).set(xlabel="", ylabel="")
         elif not x:
-            self.plot = sns.boxenplot(y = data[self.y], ax = self.ax).set(xlabel="", ylabel="")
+            self.plot = sns.boxenplot(y = data[self.y], ax = self.ax)
+            self.plot.set(xlabel="", ylabel="")
             
         else:
             self.plot = sns.boxenplot(x = data[self.x], y = data[self.y], ax = self.ax).set(xlabel="", ylabel="")

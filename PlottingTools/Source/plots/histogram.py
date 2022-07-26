@@ -22,6 +22,7 @@ class HistogramPlot(Plot):
         if projection == '1d':
             if self.library == "seaborn":
                 self.plot = sns.histplot(data = data, x = x, ax = self.ax)
+                self.plot.set(xlabel = None, ylabel = None)
             else:
                 self.plot = self.ax.hist(x = data[x], bins = xbins, edgecolor="white")
         
@@ -34,7 +35,7 @@ class HistogramPlot(Plot):
             if self.library == "seaborn":
                 self.fig.clear()
                 self.plot = sns.histplot(data = data, x= x, y = y, cbar = colorbar)
-            
+                self.plot.set(xlabel = None, ylabel = None)
             else:
                 self.fig.clear()
                 self.fig = plt.figure(figsize=(8, 8))
@@ -72,6 +73,7 @@ class HistogramPlot(Plot):
             if library == "seaborn":
                 self.fig.clear()
                 self.plot = sns.jointplot(data = data, x = x, y = y, kind="hex")
+                #self.plot.set(xlabel = None, ylabel = None)
             else:
             #self.plot = self.ax.hexbin(x = data[x], y=data[y])
                 self.fig.clear()

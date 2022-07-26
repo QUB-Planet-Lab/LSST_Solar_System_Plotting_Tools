@@ -39,7 +39,7 @@ class Plot():
 
         self.library = library
 
-        print(self.title, "title")
+        
         self.fig.suptitle(self.title)
         self.fig.supxlabel(self.xlabel)
         self.fig.supylabel(self.ylabel)
@@ -82,12 +82,7 @@ class Plot():
             ## add replot function, takes any of the columns from the dataframe and filters them to provide a new plot that maintains the old plot.
     
     def save(self, file_name : str, extension : Literal['png', 'jpeg', 'pdf'] = 'png'):
-        if self.library == "seaborn":
-            try:
-                self.plot.get_figure().savefig(f"{file_name}.{extension}")
-            except:
-                # In the event that an non-matplotlib ax is not returned i.e. JointGrid
-                self.plot.savefig(f"{file_name}.{extension}")
-        else:
-            self.fig.savefig(f"{file_name}.{extension}")
+        #print(self.plot)
+        
+        self.fig.savefig(f"{file_name}.{extension}")
         

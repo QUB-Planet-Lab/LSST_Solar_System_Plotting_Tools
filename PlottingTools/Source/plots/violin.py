@@ -34,7 +34,8 @@ class ViolinPlot(Plot):
             
         else:
             if library == "seaborn":
-                self.plot = sns.violinplot(data = data, x = x, y = y, ax = self.ax).set(xlabel = None, ylabel = None)
+                self.plot = sns.violinplot(data = data, x = x, y = y, ax = self.ax)
+                self.plot.set(xlabel = None, ylabel = None)
             else:
                 self.plot = self.ax.violinplot(dataset = data, vert=False)
             

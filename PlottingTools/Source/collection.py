@@ -67,7 +67,7 @@ class Collection():
     
         else:
             self.data = None
-        print(self.data)
+        
         
     def get_data(self):
         # THIS DISTINCT WORKS
@@ -83,13 +83,7 @@ class Collection():
             )
         return self.data
     
-    def detection_distributions(self, start_time : Optional[float] = None, end_time : Optional[float] = None,
-    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO'):
-        # hex plots
-        # fix for monthly and yearly
-        
-        #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
-        
+    def check_data(self):
         if self.lazy_loading:
             if self.data is None:
                 df = self.get_data() #provide only necessary columns
@@ -97,6 +91,23 @@ class Collection():
                 df = self.data
         else:
             df = self.get_data()
+        return df
+    
+    
+    def detection_distributions(self, start_time : Optional[float] = None, end_time : Optional[float] = None,
+    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO'):
+        # hex plots
+        # fix for monthly and yearly
+        
+        #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        
+        df = self.check_data()
+            
+        if self.start_time:
+            df = df.loc[df['midpointtai'] >= self.start_time].copy()
+        
+        if self.end_time:
+            df = df.loc[df['midpointtai'] <= self.end_time].copy()
             
         
         return _detection_distributions(
@@ -128,14 +139,18 @@ class Collection():
         )
         '''
         
-        if self.lazy_loading:
-            if self.data is None:
-                df = self.get_data() #provide only necessary columns
-            else:
-                df = self.data
-        else:
-            df = self.get_data()
+        df = self.check_data()
         
+        if self.start_time:
+            df = df.loc[df['midpointtai'] >= self.start_time].copy()
+        
+        if self.end_time:
+            df = df.loc[df['midpointtai'] <= self.end_time].copy()
+            
+        if filters:
+            df = df.loc[df['filter'].isin(filters)].copy()
+        
+        df = self.check_data()
         
         
         return objects_in_field(
@@ -166,27 +181,27 @@ class Collection():
                          plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter"
                          ):
         
-        if x == "a":
-            qx = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
-        else:
-            qx = mpcorb.c[x]
         
-        if y == "a":
-            qy = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
-        else:
-            qy = mpcorb.c[y]
+        df = self.check_data()
+            
+        if self.start_time:
+            df = df.loc[df['midpointtai'] >= self.start_time].copy()
         
-        
-        
-        return _orbital_relations(x = x, y = y, 
-                                  start_time = start_time if start_time else self.start_time, 
-                                  end_time = end_time if end_time else self.end_time,
-                                  plot_type = plot_type, title = title,
-                                  min_a = self.min_a, max_a = self.max_a, 
-                                  min_incl = self.min_incl, max_incl = self.max_incl, 
-                                  min_peri = self.min_peri, max_peri = self.max_peri, 
-                                  min_e = self.min_e, max_e = self.max_e
-                                 )
+        if self.end_time:
+            df = df.loc[df['midpointtai'] <= self.end_time].copy()
+            
+        return _orbital_relations(
+            df = df,
+            x = x, 
+            y = y,
+            start_time = start_time if start_time else self.start_time, 
+            end_time = end_time if end_time else self.end_time,
+            plot_type = plot_type, title = title,
+            min_a = self.min_a, max_a = self.max_a, 
+            min_incl = self.min_incl, max_incl = self.max_incl, 
+            min_peri = self.min_peri, max_peri = self.max_peri, 
+            min_e = self.min_e, max_e = self.max_e
+       )
                            
     
     def tisserand_relations(self,
@@ -195,19 +210,30 @@ class Collection():
                             title : Optional[str] = None,
                             plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
                            ):
-        tr = _tisserand_relations(y = y,  
-                                  
-                                  start_time = start_time if start_time else self.start_time, 
-                                  end_time = end_time if end_time else self.end_time, 
-                                  title = title, plot_type = plot_type, min_a = self.min_a, 
-                                  max_a = self.max_a,
-                                  min_incl = self.min_incl,
-                                  max_incl = self.max_incl,
-                                  min_peri = self.min_peri, 
-                                  max_peri = self.max_peri, 
-                                  min_e = self.min_e, 
-                                  max_e = self.max_e
-                                 )
+        
+        df = self.check_data()
+        
+        if self.start_time:
+            df = df.loc[df['midpointtai'] >= self.start_time].copy()
+        
+        if self.end_time:
+            df = df.loc[df['midpointtai'] <= self.end_time].copy()
+            
+        
+        tr = _tisserand_relations(
+            df = df,
+            y = y,  
+            #start_time = start_time if start_time else self.start_time, 
+            #end_time = end_time if end_time else self.end_time, 
+            title = title, plot_type = plot_type, min_a = self.min_a, 
+            max_a = self.max_a,
+            min_incl = self.min_incl,
+            max_incl = self.max_incl,
+            min_peri = self.min_peri, 
+            max_peri = self.max_peri, 
+            min_e = self.min_e, 
+            max_e = self.max_e
+       )
         
         tr.ax.set_xlim(left = tr.data["tisserand"].min(), right = tr.data["tisserand"].max())
         tr.ax.set_ylim(bottom =  tr.data[y].min(), top = tr.data[y].max())
@@ -229,11 +255,27 @@ class Collection():
         if parameter not in ORB_PARAMS:
             raise Exception(f"Orbital parameter must be one of: {ORB_PARAMS}")
         
+        
+        df = self.check_data()
+        
+        
+        #if start_time:
+        #if end_time:
+        if self.start_time:
+            df = df.loc[df['midpointtai'] >= self.start_time].copy()
+        
+        if self.end_time:
+            df = df.loc[df['midpointtai'] <= self.end_time].copy()
+            
+        if filters:
+            df = df.loc[df['filter'].isin(filters)].copy()
+            
         args = dict(
+            df = df,
             filters = filters,
             plot_type = plot_type,
-            start_time = start_time if start_time else self.start_time,
-            end_time = end_time if end_time else self.end_time,
+            #start_time = start_time if start_time else self.start_time,
+            #end_time = end_time if end_time else self.end_time,
             title = title,
             library = library,
             min_a = self.min_a, 
@@ -254,7 +296,7 @@ class Collection():
             return inclination(
                 **args
             )
-        if parameter == "semi-major-axis":
+        if parameter == "semi_major_axis":
             return semi_major_axis(
                 **args
             )
@@ -267,6 +309,7 @@ class Collection():
         
     def clear(self):
         #clear all the dataframes
+        self.data = None
         return
         
     

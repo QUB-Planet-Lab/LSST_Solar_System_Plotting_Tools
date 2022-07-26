@@ -57,8 +57,7 @@ def _detection_distributions(
     
     bins = [start_time + i for i in range(0, math.floor(end_time - start_time) + 1, 1)]
     
-    print(df)
-    
+        
     df = df.sort_values(by = ['midpointtai'], ascending=True)
 
     df['datetime'] = [date[0:10] for date in format_times(df['midpointtai'].tolist(), _format="ISO")]

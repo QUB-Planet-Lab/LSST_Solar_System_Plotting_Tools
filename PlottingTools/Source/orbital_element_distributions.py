@@ -33,6 +33,7 @@ ELEMENTS = {'e' : {'label': 'Eccentricity','unit' : None},\
            }
 
 def _tisserand_relations(
+    df,
     y : Literal["incl", "q", "e", "a"],
     start_time : Optional[float] = None,
     end_time : Optional[float] = None,
@@ -44,7 +45,7 @@ def _tisserand_relations(
     
     if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
         raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
-        
+    '''   
     conditions = []
     
     if start_time:
@@ -82,6 +83,7 @@ def _tisserand_relations(
                 end_time = end_time,
                 **orbital_elements
             )
+    '''
     
     if plot_type == "scatter":
         return ScatterPlot(data = df, x="tisserand", y=y, xlabel="Tisserand parameter", ylabel= ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title)
@@ -105,6 +107,7 @@ def _tisserand_relations(
         return hp
 
 def _orbital_relations(
+    df,
     x : Literal["incl", "q", "e", "a"],
     y : Literal["incl", "q", "e", "a"],
     start_time : Optional[float] = None, end_time : Optional[float] = None,
@@ -114,18 +117,18 @@ def _orbital_relations(
     **orbital_elements
 ):
     
-    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)    
+    #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)    
     
     if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
         raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
-    conditions = []
     
+    #conditions = []
+    '''
     if start_time:
         conditions.append(diasource.c['midpointtai'] >= start_time)
     
     if end_time:
         conditions.append(diasource.c['midpointtai'] <= end_time)
-    
     
     conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
     
@@ -154,7 +157,8 @@ def _orbital_relations(
                 end_time = end_time,
                 **orbital_elements
             )
-
+    '''
+    
     if plot_type == "scatter":
         return ScatterPlot(data = df, x=x, y=y, xlabel=x, ylabel=y, title = title)
     
@@ -177,7 +181,8 @@ def _orbital_relations(
         return hp
     
 def base(
-         stmt,
+         #stmt,
+         df,
          element, # e, incl, a, q
          filters: Optional[list] = None,
          start_time : Optional[float] = None, end_time : Optional[float] = None,
@@ -185,19 +190,19 @@ def base(
          title : Optional[str] = None,
          library: Optional[str] = "seaborn",
          **orbital_elements
-    
         ):
+    
+    
     plot_type = plot_type.upper()
     
     if plot_type not in PLOT_TYPES:
         raise TypeError(f"{plot_type} is not a valid chart option. Valid plot options include 'BOX', 'BOXEN' or 'VIOLIN'")
     
     conditions = []
+       
+    #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
     
-    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
-    
-    # need a validate eccentricty function
-    
+    '''
     if start_time:
         conditions.append(diasource.c['midpointtai'] >= start_time)
     
@@ -222,8 +227,9 @@ def base(
             end_time = end_time,
             **orbital_elements
         )
-
-    start_time, end_time = format_times([start_time, end_time], _format="ISO")
+    '''
+    
+    #start_time, end_time = format_times([start_time, end_time], _format="ISO")
     label = ELEMENTS[element]['label']
     unit = ELEMENTS[element]['unit']
     
@@ -244,13 +250,13 @@ def base(
         if title:
             args['title']= title
         else:
-            args['title'] =f"{label} distributions across filters ({filters_str})\n {start_time} - {end_time}"
+            args['title'] =f"{label} distributions across filters ({filters_str})\n"
     else:
         
         if title:
             args['title']= title 
         else:
-            args['title'] = f"{label} distributions across all filters\ {start_time}-{end_time}"    
+            args['title'] = f"{label} distributions across all filters"    
     
     
     cols = df["filter"].unique()
@@ -272,7 +278,7 @@ def base(
                 for i, patch in enumerate(plot_template.ax.artists):
                     #print(patch)
                     patch.set_facecolor(COLOR_SCHEME[cols[i]])
-
+            
             if library == "matplotlib":
                 for i, patch in enumerate(plot_template.plot['boxes']):
                     patch.set(facecolor = COLOR_SCHEME[cols[i]])
@@ -281,7 +287,7 @@ def base(
                     median.set_color('black')
 
                 plot_template.ax.set_yticks(np.arange(1, len(cols) + 1), cols)
-            
+
         else:
             
             plot_template = BoxPlot(**args, data = df, library = library)
@@ -299,7 +305,6 @@ def base(
                     patch.set(facecolor="#ED4C4C")
                 if element == "a":
                     patch.set(facecolor="#1C81A4")
-     
         return plot_template
     
     elif plot_type == "VIOLIN":
@@ -343,83 +348,98 @@ def base(
         
         
     
-def eccentricity(filters: Optional[list] = None,
-                 start_time : Optional[float] = None, end_time : Optional[float] = None,
-                 plot_type: Literal[PLOT_TYPES] = 'BOX',
-                 title : Optional[str] = None,
-                 **orbital_elements
-                ):
+def eccentricity(
+    df,
+    filters: Optional[list] = None,
+    start_time : Optional[float] = None,
+    end_time : Optional[float] = None,
+    plot_type: Literal[PLOT_TYPES] = 'BOX',
+    title : Optional[str] = None,
+    **orbital_elements
+):
     
-    print(title)
     return base(
+        df = df,
         filters = filters,
         start_time = start_time, end_time = end_time,
         plot_type = plot_type,
         title = title,
         element = 'e',
-        **orbital_elements,
-        stmt = select(
-            distinct(mpcorb.c['ssobjectid']), mpcorb.c['e'], diasource.c['filter']).join(
-            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+        **orbital_elements
+        #stmt = select(
+        #    distinct(mpcorb.c['ssobjectid']), mpcorb.c['e'], diasource.c['filter']).join(
+            #diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
         
     
-def perihelion(filters: Optional[list] = None,
-               start_time : Optional[float] = None, end_time : Optional[float] = None,
-               plot_type: Literal[PLOT_TYPES] = 'BOX',
-               title : Optional[str] = None,
-               **orbital_elements,
-                  ):
-    
+def perihelion(
+    df,
+    filters: Optional[list] = None,
+    start_time : Optional[float] = None, end_time : Optional[float] = None,
+    plot_type: Literal[PLOT_TYPES] = 'BOX',
+    title : Optional[str] = None,
+    **orbital_elements
+):
+    print(df)
     return base(
+        df = df,
         filters = filters,
         start_time = start_time, end_time = end_time,
         **orbital_elements,
         plot_type = plot_type,
         title = title,
         element = 'q',
-            stmt = select(distinct(mpcorb.c['ssobjectid']), mpcorb.c['q'], diasource.c['filter']).join(
-            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+            #stmt = select(distinct(mpcorb.c['ssobjectid']), mpcorb.c['q'], diasource.c['filter']).join(
+            #diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
         
     
-def inclination(filters: Optional[list] = None,
-                start_time : Optional[float] = None, end_time : Optional[float] = None,
-                plot_type: Literal[PLOT_TYPES] = 'BOX',
-                title : Optional[str] = None,
-                **orbital_elements
-               ):
+def inclination(
+    df,
+    filters: Optional[list] = None,
+    start_time : Optional[float] = None, end_time : Optional[float] = None,
+    plot_type: Literal[PLOT_TYPES] = 'BOX',
+    title : Optional[str] = None,
+    **orbital_elements
+):
     
-    
+
     return base(
+        df = df,
         filters = filters,
         start_time = start_time, end_time = end_time,
         **orbital_elements,
         plot_type = plot_type,
         title = title,
         element = 'incl',
-        stmt = select(distinct(mpcorb.c['ssobjectid']),mpcorb.c['incl'], diasource.c['filter']).join(
-            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
-
+    '''
+    stmt = select(distinct(mpcorb.c['ssobjectid']),mpcorb.c['incl'], diasource.c['filter']).join(
+            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+    '''
     
         
-def semi_major_axis(filters: Optional[list] = None,
-                 start_time : Optional[float] = None, end_time : Optional[float] = None,
-                 plot_type: Literal[PLOT_TYPES] = 'BOX',
-                 title : Optional[str] = None,
-                 **orbital_elements
-                ):
-    
+def semi_major_axis(
+    df,
+    filters: Optional[list] = None,
+    start_time : Optional[float] = None,
+    end_time : Optional[float] = None,
+    plot_type: Literal[PLOT_TYPES] = 'BOX',
+    title : Optional[str] = None,
+    **orbital_elements
+):
+
     return base(
+        df = df,
         filters = filters,
         start_time = start_time, end_time = end_time,
         **orbital_elements,
         plot_type = plot_type,
         title = title,
-        element = 'a',
-        stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['q'], (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
-            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+        element = 'a'
     )
-
+    '''
+    stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['q'], (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
+            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+    '''
     
