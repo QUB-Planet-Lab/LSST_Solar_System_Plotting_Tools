@@ -144,6 +144,8 @@ class Collection():
                                 start_time : Optional[float] = None,
                                 end_time : Optional[float] = None,
                                 time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
+                                    timeframe : Literal["daily", "monthly", "year"] = "daily",
+
                                 cache_data: Optional[bool] = False):
         # hex plots
         # fix for monthly and yearly
@@ -166,7 +168,8 @@ class Collection():
             start_time = start_time if start_time else self.start_time,
             end_time = end_time if end_time else self.end_time,
             time_format = time_format,
-            cache_data = cache_data
+            cache_data = cache_data,
+            timeframe = timeframe
         )
     
     #add _orbital_relations

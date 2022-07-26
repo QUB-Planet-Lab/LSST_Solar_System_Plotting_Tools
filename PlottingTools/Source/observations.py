@@ -30,30 +30,41 @@ import math
 
 from typing import Optional, Literal
 
-
+TIMEFRAME = ["daily", "monthly", "yearly"]
 
 def _detection_distributions(
     df,
     start_time : float, end_time : float,
     title : Optional[str] = None,
-    #todo - timeframe : Literal["day", "monthly", "year"] = "day",
+    timeframe : Literal["daily", "monthly", "yearly"] = "daily",
     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
     cache_data: Optional[bool] = False,
     **orbital_elements
 ):
     
-    bins = [start_time + i for i in range(0, math.floor(end_time - start_time) + 1, 1)]
-    
+    if timeframe not in TIMEFRAME:
+        raise Exception(f"Timeframe must be one of {TIMEFRAME}")
         
-    df = df.sort_values(by = ['midpointtai'], ascending=True)
+    if timeframe == "daily":
+        
+         df['datetime'] = [date[0:10] for date in format_times(df['midpointtai'].tolist(), _format="ISO")]
+            
+    if timeframe == "monthly":
 
-    df['datetime'] = [date[0:10] for date in format_times(df['midpointtai'].tolist(), _format="ISO")]
+         df['datetime'] = [date[0:7] for date in format_times(df['midpointtai'].tolist(), _format="ISO")]
+            
+    #df = df.sort_values(by = ['midpointtai'], ascending=True)
+
+    if timeframe == "yearly":
+        df['datetime'] = [date[0:4] for date in format_times(df['midpointtai'].tolist(), _format="ISO")]
     
-    hp = HistogramPlot(data = df, x="datetime", xbins = bins)
+    df = df.sort_values(by = ['midpointtai'], ascending=True)
         
+    hp = HistogramPlot(data = df, x="datetime", library = "seaborn") #, xbins = bins)
+
     hp.ax.set(yscale="log")
     hp.fig.suptitle(title if title else f"Detection distributions")
-    
+
     hp.fig.autofmt_xdate()
     
     

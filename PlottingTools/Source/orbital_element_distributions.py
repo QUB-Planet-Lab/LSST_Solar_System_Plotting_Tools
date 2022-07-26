@@ -272,7 +272,6 @@ def perihelion(
     cache_data: Optional[bool] = False,
     **orbital_elements
 ):
-    print(df)
     return base(
         df = df,
         filters = filters,
