@@ -14,10 +14,10 @@ from plots.styles.filter_symbols import FILTER_SYMBOLS
 import pandas as pd
 import numpy as np
 
-from sbpy.photometry import HG
+from sbpy.photometry import HG, HG12, HG1G2
 
     
-FIT = [None, 'HG']
+FIT = [None, 'HG'] #, 'HG12', 'HG1G2']
 
 def _phase_curve(
                 df, #dataframe
@@ -32,6 +32,8 @@ def _phase_curve(
 ):
     
     #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+    fit = fit.upper()
+    
     if fit not in FIT:
         raise Exception(f"{fit} is not a valid fit option. Valid options include {FIT}")
         
@@ -103,7 +105,18 @@ def _phase_curve(
                 if fit == "HG":               
                     _ph = sorted(df_filter["phaseangle"])
                     _mag = HG.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12err'])
-                    pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter])               
+                    pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter])  
+                '''
+                if fit == "HG1G2":
+                    _ph = sorted(df_filter["phaseangle"])
+                    _mag = HG1G2.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12'])
+                    pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter]) 
+                if fit == "HG12": 
+                    _ph = sorted(df_filter["phaseangle"])
+                    _mag = HG12.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12']) # g12
+                    pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter])  
+                '''  
+                    
             pc.ax.legend(loc="upper right")        
             pc.data = df
     else:

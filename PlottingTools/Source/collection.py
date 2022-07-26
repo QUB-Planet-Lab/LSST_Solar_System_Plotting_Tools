@@ -13,16 +13,17 @@ from observations import _detection_distributions
 
 from typing import Optional, Literal
 
-from sqlalchemy import select, func, distinct
+from sqlalchemy import select, func, distinct, column
 
 PLOT_TYPES = ['BOX', 'BOXEN', 'VIOLIN']
 ORB_PARAMS = ["eccentricity", "perihelion", "semi_major_axis", "inclination"]
 
+
+
+
 class Collection():
     def __init__(self, lazy_loading: Optional[bool] = True, start_time : Optional[float] = None, end_time : Optional[float] = None, **orbital_elements):
-        
-        
-        
+
         self.lazy_loading = lazy_loading
         
         self.min_a, self.max_a, self.min_incl, self.max_incl, self.min_peri, self.max_peri, self.min_e, self.max_e = validate_orbital_elements(**orbital_elements)
@@ -61,37 +62,86 @@ class Collection():
 
             tisserand
         ]
-    
+        
+        self.table_columns = {
+            'midpointtai' : diasource.c['midpointtai'],
+            'filter' : diasource.c['filter'],
+            'ssobjectid' : diasource.c['ssobjectid'],
+            'heliocentricx': sssource.c['heliocentricx'],
+            'heliocentricy': sssource.c['heliocentricy'],
+            'heliocentricz' : sssource.c['heliocentricz'],
+
+            'q' : mpcorb.c['q'],
+            'e' : mpcorb.c['e'],
+            'incl' : mpcorb.c['incl'],
+            'a': (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a'),
+
+            'tisserand' : tisserand
+        }
+        
         if lazy_loading == False:
             #load data now.
-            self.data = self.get_data()
+            self.data = self.get_data(self.cols)
     
         else:
             self.data = None
         
         
-    def get_data(self):
+    def get_data(self, cols):
         # THIS DISTINCT WORKS
         
-        self.data = db.query(
-                select(
-                    *self.cols
-                ).join(
-                    diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
-                ).join(
-                    sssource, sssource.c['ssobjectid'] == mpcorb.c['ssobjectid']
-                ).distinct(mpcorb.c['ssobjectid']).where(*self.conditions)
+        df = db.query(
+                    select(
+                        *[self.table_columns[col] for col in cols]
+                    ).join(
+                        diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
+                    ).join(
+                        sssource, sssource.c['ssobjectid'] == mpcorb.c['ssobjectid']
+                    ).distinct(mpcorb.c['ssobjectid']).where(*self.conditions)
+                )
+        #print(df)
+        if self.data is None:
+            self.data = df
+        
+        else:
+            #print(df)
+            self.data = self.data.merge(
+                df,
+                on = ['ssobjectid', 'midpointtai']
             )
+            
         return self.data
     
-    def check_data(self):
+    def check_data(self, cols_required):
+        #print(cols_required)
+        #print(self.data.columns)
+        
         if self.lazy_loading:
             if self.data is None:
-                df = self.get_data() #provide only necessary columns
+                df = self.get_data(cols_required) 
+                
             else:
-                df = self.data
+                c = ['ssobjectid', 'midpointtai']
+                for col in cols_required:
+                   
+                    if (col in self.data.columns):
+                        pass
+                        # This needs cleaned up
+                        
+                        #cols_required = cols_required.remove(col)
+                    else:
+                        c.append(col)
+                    
+                #print(f"Required {cols_required}, {c}")
+                #if cols_required:
+                    # now get columns
+                df = self.get_data(c)
+                    #merge with existing dataframe
+                        
+                #df = self.data
         else:
-            df = self.get_data()
+            #should be unnecessary
+            df = self.get_data(self.cols)
         return df
     
     
@@ -105,7 +155,9 @@ class Collection():
         
         #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
         
-        df = self.check_data()
+        df = self.check_data(
+            ['midpointtai', 'ssobjectid']
+        )
             
         if self.start_time:
             df = df.loc[df['midpointtai'] >= self.start_time].copy()
@@ -145,7 +197,9 @@ class Collection():
         )
         '''
         
-        df = self.check_data()
+        df = self.check_data(
+            ['ssobjectid', 'filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid', 'midpointtai']
+        )
         
         if self.start_time:
             df = df.loc[df['midpointtai'] >= self.start_time].copy()
@@ -155,7 +209,6 @@ class Collection():
             
         if filters:
             df = df.loc[df['filter'].isin(filters)].copy()
-        
         
         
         return objects_in_field(
@@ -189,16 +242,19 @@ class Collection():
                          ):
         
         
-        df = self.check_data()
+        df = self.check_data(
+            ['ssobjectid','midpointtai', x, y]
+        )
             
         if self.start_time:
             df = df.loc[df['midpointtai'] >= self.start_time].copy()
         
         if self.end_time:
             df = df.loc[df['midpointtai'] <= self.end_time].copy()
-            
+
+        
         return _orbital_relations(
-            df = df[[x, y, 'ssobjectid']],
+            df = df[[x, y, 'ssobjectid', 'midpointtai']],
             x = x, 
             y = y,
             start_time = start_time if start_time else self.start_time, 
@@ -220,7 +276,9 @@ class Collection():
                             cache_data: Optional[bool] = False
                            ):
         
-        df = self.check_data()
+        df = self.check_data(
+            ['ssobjectid', 'midpointtai', 'tisserand', y]
+        )
         
         if self.start_time:
             df = df.loc[df['midpointtai'] >= self.start_time].copy()
@@ -268,8 +326,20 @@ class Collection():
         if parameter not in ORB_PARAMS:
             raise Exception(f"Orbital parameter must be one of: {ORB_PARAMS}")
         
+        required_cols = ['ssobjectid', 'midpointtai', 'filter']
         
-        df = self.check_data()
+        if parameter == "eccentricity":
+            required_cols.append("e")
+        if parameter == "semi_major_axis":
+            required_cols.append("a")
+        if parameter == "inclination":
+            required_cols.append("incl")
+        if parameter == "perihelion":
+            required_cols.append("q")
+            
+        df = self.check_data(
+            required_cols
+        )
         
         
         #if start_time:

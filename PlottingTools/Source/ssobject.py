@@ -207,7 +207,7 @@ class Object():
         if filters:
             filters = validate_filters(list(set(filters)))
             for _filter in filters:
-                filter_cols.extend([f'{_filter}h', f'{_filter}g12err'])
+                filter_cols.extend([f'{_filter}h', f'{_filter}g12err', f'{_filter}g12'])
                 
         if start_time:
             df = df.loc[df['midpointtai'] >= start_time].copy() # copy() silences warnings ~ effect on performance needs evaluated
@@ -220,7 +220,7 @@ class Object():
         return _phase_curve(
             mpcdesignation = self.mpcdesignation,
             ssobjectid = self.ssobjectid,
-            df = df[['filter','mag', 'magsigma', 'topocentricdist', 'heliocentricdist', 'phaseangle', "cmag",*filter_cols]],
+            df = df[['filter','mag', 'magsigma', 'topocentricdist', 'heliocentricdist', 'phaseangle', "cmag", *filter_cols]],
             filters = filters,
             title = title,
             library = library,
