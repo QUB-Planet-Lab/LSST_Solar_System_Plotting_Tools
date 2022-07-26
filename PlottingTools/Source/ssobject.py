@@ -100,11 +100,7 @@ class Object():
             self.orbital_parameters["Q"] = None
     
     
-        if lazy_loading == False:
-            #load all data now
-            #self.curve
-            #self.orbit_data 
-            
+        if lazy_loading == False:           
             self.curve_df = db.query( # self.get_curve_data()
                 select(*self.cols).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation)
             )
@@ -328,9 +324,7 @@ class Object():
         t_j = round(self.tisserand, 3)
         
         
-        query = '{"t_jup":%s}'%(str(t_j))
-        #other parameters?
-        
+        query = '{"t_jup":%s}'%(str(t_j))        
        
         resp = requests.get(f'https://www.asterank.com/api/asterank?query={query}&limit={limit}').json()
         
@@ -349,27 +343,5 @@ class Object():
             self.orbit_df = None
         
         return
-    
-    '''
-    # TODO
-    @property
-    def classification(self):
-        #get from JPL
-        #https://ssd-api.jpl.nasa.gov/doc/sb_ident.html
-        # write call to JPL API
-        
-        query = '{"ref":"%s"}'%(str(self.mpcdesignation))
-        print(f"http://asterank.com/api/mpc?query={query}&limit=1")
-        resp = requests.get(f"http://asterank.com/api/mpc?query={query}&limit=1").json()
-        print(resp)
-        prov_des = resp["prov_des"]
-
-        resp = requests.get(f"https://ssd-api.jpl.nasa.gov/sbdb.api?alt-des=1&alt-orbits=1&ca-data=1&ca-time=both&ca-tunc=both&cd-epoch=1&cd-tp=1&discovery=1&full-prec=1&nv-fmt=both&orbit-defs=1&phys-par=1&r-notes=1&r-observer=1&radar-obs=1&sat=1&sstr={prov_des}&utf8=1&vi-data=1&www=1").json()
-
-        if resp:
-                           print(resp["orbit"]["orbit_class"])
-        else:
-                           print("Cannot find the object given by ...")
-     '''       
         
     

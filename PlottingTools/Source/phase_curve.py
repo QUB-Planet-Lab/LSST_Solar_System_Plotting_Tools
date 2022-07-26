@@ -31,67 +31,12 @@ def _phase_curve(
                 cache_data: Optional[bool] = False
 ):
     
-    #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+    
     fit = fit.upper()
     
     if fit not in FIT:
         raise Exception(f"{fit} is not a valid fit option. Valid options include {FIT}")
-        
-    
-    #cols = [diasource.c['magsigma'], diasource.c['filter'], mpcorb.c['mpcdesignation'], diasource.c['ssobjectid'], diasource.c['midpointtai'],diasource.c['mag'], sssource.c['phaseangle'], sssource.c['topocentricdist'], sssource.c['heliocentricdist']]
-    
-    
-    #conditions = []
-    
-    #if filters:
-        
-        #filters = validate_filters(list(set(filters)))
-        #conditions.append(diasource.c['filter'].in_(filters))
-        
-        
-        #for _filter in filters:
-            #calc_mags = [ssobjects.c[f'{_filter}h'], ssobjects.c[f'{_filter}g12'], ssobjects.c[f'{_filter}herr'], ssobjects.c[f'{_filter}g12err'], ssobjects.c[f'{_filter}chi2']]
-            #for item in calc_mags:              
-            #    cols.append(item)
-        
-    #if mpcdesignation:
-    #    conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
-   
-    #if ssobjectid:
-    #   conditions.append(mpcorb.c['ssobjectid'] == ssobjectid)
-    
-    
-        
-    #stmt = select(*cols).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
-    
-    #df = db.query(
-    #    stmt
-    #)
-    
-    '''
-    if df.empty:
-        query = f"""No results returned for your query:\n"""
-        if filters:
-            query += f"filters : {filters}\n"
-        if start_time:
-            query += f"start_time : {start_time}\n"
-        if end_time:
-            query += f"end_time : {end_time}\n"
-        if mpcdesignation:
-            query += f"mpcdesignation : {mpcdesignation}\n"
-        if ssobjectid:
-            query += f"ssobjectid : {ssobjectid}\n"
 
-        query = query[0:-1]
-    
-        print(query)
-        return
-    '''
-    
-    
-    
-    
-    
     if filters:
         #note is yerr = 'magsigma'?
         pc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values), x = "phaseangle", y="mag", title=title if title else f"Phase curve for {mpcdesignation if mpcdesignation else ssobjectid}\n", xlabel=f"Phase Angle ({DEGREE})", ylabel="Reduced magnitude", library = library, cache_data = cache_data)
@@ -107,6 +52,7 @@ def _phase_curve(
                     _mag = HG.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12err'])
                     pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter])  
                 '''
+                #TO-DO - fit
                 if fit == "HG1G2":
                     _ph = sorted(df_filter["phaseangle"])
                     _mag = HG1G2.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12'])

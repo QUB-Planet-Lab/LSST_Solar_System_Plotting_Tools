@@ -35,72 +35,8 @@ def objects_in_field(
     **orbital_elements
 ):
     
-    '''
-    cols = [
-            diasource.c['filter'],
-            diasource.c['midpointtai'], 
-            sssource.c['heliocentricx'],
-            sssource.c['heliocentricy'],
-            sssource.c['heliocentricz'],
-           ]
-    '''
-    #conditions = []
-    
-    
-    #if filters:
-        
-        #filters = validate_filters(list(set(filters)))
-        #conditions.append(diasource.c['filter'].in_(filters))
-    '''    
-    if mpcdesignation:
-        conditions.append(mpcorb.c['mpcdesignation'] == mpcdesignation)
-   
-    if ssobjectid:
-        conditions.append(mpcorb.c['ssobjectid'] == ssobjectid)
-    
-    if start_time:
-        conditions.append(diasource.c['midpointtai'] >= start_time)
-    
-    if end_time:
-        conditions.append(diasource.c['midpointtai'] <= end_time)
-    '''
-    
     if projection:
         projection = projection.lower()
-    
-       
-    #conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
-        
-    '''
-    stmt = select(*cols).join(mpcorb, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
-
-    # No need for third join currently
-    
-    df = db.query(
-             stmt
-    )
-    '''
-    
-    '''
-    if df.empty:
-        if df.empty:
-            query = f"""No results returned for your query:\n"""
-        if filters:
-            query += f"filters : {filters}\n"
-        if start_time:
-            query += f"start_time : {start_time}\n"
-        if end_time:
-            query += f"end_time : {end_time}\n"
-        if mpcdesignation:
-            query += f"mpcdesignation : {mpcdesignation}\n"
-        if ssobjectid:
-            query += f"ssobjectid : {ssobjectid}\n"
-                
-        query = query[0:-1]
-        
-        print(query)
-        return # Is this the best way to return no results?
-    '''
     
     if filters:
         lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz" , projection = projection, library = library)

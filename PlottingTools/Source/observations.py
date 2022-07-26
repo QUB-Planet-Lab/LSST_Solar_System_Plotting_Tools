@@ -42,20 +42,6 @@ def _detection_distributions(
     **orbital_elements
 ):
     
-    
-    
-    #conditions = create_orbit_conditions(**orbital_elements)
-    
-    '''
-    df = db.query(
-                select(diasource.c['midpointtai'], ).distinct(diasource.c['ssobjectid']).where(
-                    diasource.c['midpointtai'] >= start_time,
-                    diasource.c['midpointtai'] <= end_time
-                )
-            )
-     
-    '''  
-    
     bins = [start_time + i for i in range(0, math.floor(end_time - start_time) + 1, 1)]
     
         
@@ -79,7 +65,6 @@ def _detection_distributions(
         hp.ax.set_xticks(ticks = bins, labels = [date[0:10] for date in format_times(bins, _format="ISO")])
         
     '''  
-    
     return hp
 
 
@@ -99,6 +84,7 @@ def object_detections(start: float, end: float):
 
 
     return ScatterPlot(data = df, x = "ra", y = "decl", xlabel=f"R.A. ({DEGREE})", ylabel=f"Dec ({DEGREE})", title=f"Observations during the period {start}-{end}")
+
 
 def ccd_visit(ccd_visit_id : int):
     query = """

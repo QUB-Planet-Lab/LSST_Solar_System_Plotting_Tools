@@ -46,45 +46,6 @@ def _tisserand_relations(
     
     if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
         raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
-    '''   
-    conditions = []
-    
-    if start_time:
-        conditions.append(diasource.c['midpointtai'] >= start_time)
-    
-    if end_time:
-        conditions.append(diasource.c['midpointtai'] <= end_time)
-    
-    
-    conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
-       
-    if y == "a":
-        qy = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
-    else:
-        qy = mpcorb.c[y]
-        
-        
-    a_J = 5.2038 # au
-    
-    tisserand = (a_J / (mpcorb.c['q'] / (1 - mpcorb.c['e'])) + 2 * func.cos(mpcorb.c['incl']) * func.sqrt((mpcorb.c['q'] / (1 - mpcorb.c['e'])) / a_J * (1 - func.power(mpcorb.c['e'], 2)))).label("tisserand")
-        
-    
-    df = db.query(
-        select(
-            distinct(mpcorb.c['ssobjectid']), qy, tisserand,
-            diasource.c['filter']).join(
-            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
-        ).where(
-                *conditions
-        )
-    )
-    if df.empty:
-        return empty_response(
-                start_time = start_time,
-                end_time = end_time,
-                **orbital_elements
-            )
-    '''
     
     if plot_type == "scatter":
         return ScatterPlot(data = df, x="tisserand", y=y, xlabel="Tisserand parameter", ylabel= ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title)
@@ -118,48 +79,8 @@ def _orbital_relations(
     cache_data: Optional[bool] = False,
     **orbital_elements
 ):
-    
-    #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)    
-    
     if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
         raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
-    
-    #conditions = []
-    '''
-    if start_time:
-        conditions.append(diasource.c['midpointtai'] >= start_time)
-    
-    if end_time:
-        conditions.append(diasource.c['midpointtai'] <= end_time)
-    
-    conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
-    
-    if x == "a":
-        qx = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
-    else:
-        qx = mpcorb.c[x]
-        
-    if y == "a":
-        qy = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
-    else:
-        qy = mpcorb.c[y]
-        
-    df = db.query(
-        select(
-            distinct(mpcorb.c['ssobjectid']), qx , qy, diasource.c['filter']).join(
-            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
-        
-        ).where(
-                *conditions
-        )
-    )
-    if df.empty:
-        return empty_response(
-                start_time = start_time,
-                end_time = end_time,
-                **orbital_elements
-            )
-    '''
     
     if plot_type == "scatter":
         return ScatterPlot(data = df, x=x, y=y, xlabel=x, ylabel=y, title = title)
@@ -199,40 +120,8 @@ def base(
     plot_type = plot_type.upper()
     
     if plot_type not in PLOT_TYPES:
-        raise TypeError(f"{plot_type} is not a valid chart option. Valid plot options include 'BOX', 'BOXEN' or 'VIOLIN'")
+        raise TypeError(f"{plot_type} is not a valid chart option. Valid plot options include 'BOX', 'BOXEN' or 'VIOLIN'")   
     
-    conditions = []
-       
-    #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
-    
-    '''
-    if start_time:
-        conditions.append(diasource.c['midpointtai'] >= start_time)
-    
-    if end_time:
-        conditions.append(diasource.c['midpointtai'] <= end_time)
-    
-    if filters:
-        filters = validate_filters(list(set(filters)))
-        conditions.append(diasource.c['filter'].in_(filters))
-        
-    create_orbit_conditions(conditions = conditions, **orbital_elements)
-        
-    df = db.query(
-        stmt.where(
-            *conditions
-        ) 
-   )
-    if df.empty:
-        return empty_response(
-            filters = filters,
-            start_time = start_time,
-            end_time = end_time,
-            **orbital_elements
-        )
-    '''
-    
-    #start_time, end_time = format_times([start_time, end_time], _format="ISO")
     label = ELEMENTS[element]['label']
     unit = ELEMENTS[element]['unit']
     
@@ -371,9 +260,6 @@ def eccentricity(
         element = 'e',
         cache_data = cache_data,
         **orbital_elements
-        #stmt = select(
-        #    distinct(mpcorb.c['ssobjectid']), mpcorb.c['e'], diasource.c['filter']).join(
-            #diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
         
     
@@ -396,8 +282,6 @@ def perihelion(
         title = title,
         element = 'q',
         cache_data = cache_data
-            #stmt = select(distinct(mpcorb.c['ssobjectid']), mpcorb.c['q'], diasource.c['filter']).join(
-            #diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
     )
         
     
@@ -422,11 +306,6 @@ def inclination(
         element = 'incl',
         cache_data = cache_data
     )
-    '''
-    stmt = select(distinct(mpcorb.c['ssobjectid']),mpcorb.c['incl'], diasource.c['filter']).join(
-            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
-    '''
-    
         
 def semi_major_axis(
     df,
@@ -449,8 +328,4 @@ def semi_major_axis(
         element = 'a',
         cache_data = cache_data
     )
-    '''
-    stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['q'], (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
-            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
-    '''
     
