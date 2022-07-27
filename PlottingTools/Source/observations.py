@@ -7,6 +7,7 @@ SCRIPT_DIR = PACKAGE_PARENT / 'Source'
 sys.path.append(str(SCRIPT_DIR))
 
 import numpy as np
+import pandas as pd
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -30,6 +31,8 @@ import math
 
 from typing import Optional, Literal
 
+pd.options.mode.chained_assignment = None 
+
 TIMEFRAME = ["daily", "monthly", "yearly"]
 
 def _detection_distributions(
@@ -46,7 +49,6 @@ def _detection_distributions(
         raise Exception(f"Timeframe must be one of {TIMEFRAME}")
         
     if timeframe == "daily":
-        
          df['datetime'] = [date[0:10] for date in format_times(df['midpointtai'].tolist(), _format="ISO")]
             
     if timeframe == "monthly":
