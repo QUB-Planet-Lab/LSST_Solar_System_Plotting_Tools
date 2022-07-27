@@ -1,12 +1,14 @@
 from database import db
 from phase_curve import _phase_curve
 from light_curve import _light_curve
-from objects_in_field import objects_in_field
+from objects_in_field import _plot_orbit
 
 from typing import Optional, Literal
 
 from sqlalchemy import select
 from database.schemas import mpcorb, sssource, diasource, ssobjects
+from database.empty_response import empty_response
+
 from math import cos, sqrt
 from typing import Optional
 
@@ -17,9 +19,7 @@ import numpy as np
 from database.validators import validate_times, validate_filters
 FILTERS = ["g", "r", "i", "z", "y", "u"]
 class Object():
-    #lazy_loading
-    
-    
+        
     def __init__(self, ssobjectid: Optional[str] = None, mpcdesignation: Optional[str] = None, lazy_loading : Optional[bool] = True): 
         
         self.lazy_loading = lazy_loading
@@ -79,11 +79,9 @@ class Object():
             raise Exception("No results returned")
         
         if not self.ssobjectid:
-            
             self.ssobjectid = str(self.orbital_parameters['ssobjectid'][0])
         
         if not self.ssobjectid:
-
             self.mpcdesignation = self.orbital_parameters['mpcdesignation'][0].strip()
             
         self.orbital_parameters = self.orbital_parameters.drop(['mpcdesignation', 'ssobjectid', 'mpcnumber', 'fulldesignation'], axis=1)
@@ -105,13 +103,9 @@ class Object():
                 select(*self.cols).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation)
             )
             
-            #return empty dataframe if none
             if self.curve_df.empty:
-                #add_empty response
-                pass # empty response
-            
-            # Need to narrow down queries
-            
+                return empty_response()
+                       
             self.orbit_df = db.query( 
                 select(diasource.c['filter'],
                     diasource.c['midpointtai'], 
@@ -119,10 +113,9 @@ class Object():
                     sssource.c['heliocentricy'],
                     sssource.c['heliocentricz']).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation)
             )
+            
             if self.orbit_df.empty:
-                #add_empty response
-                pass
-                #return # empty response
+                return empty_response()
         
         else:
             #better names required??
@@ -153,9 +146,9 @@ class Object():
                     sssource.c['heliocentricz']).join(ssobjects, ssobjects.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(mpcorb.c["mpcdesignation"] == self.mpcdesignation))
             
         if self.orbit_df.empty:
-                #add_empty response
-                pass
-            
+                empty_response()
+                return
+                
         return self.orbit_df
             
     
@@ -166,7 +159,6 @@ class Object():
             if self.orbital_parameters['e'][0] < 1:
 
                 self.T_J = a_J / self.orbital_parameters['a'][0] + 2 * cos(self.orbital_parameters['incl'][0]) * sqrt(self.orbital_parameters['a'][0] / a_J * (1 - self.orbital_parameters['e'][0]**2))
-
                 return self.T_J
             else:
                 print("Tisserand parameter is undefined for this object")
@@ -182,7 +174,6 @@ class Object():
                     library : Optional[str] = "matplotlib",
                     cache_data: Optional[bool] = False,
                     fit = None,     
-                    
                    ):
         
         if self.lazy_loading == True:
@@ -210,13 +201,13 @@ class Object():
         if end_time:
             df = df.loc[df['midpointtai'] <= end_time].copy()
         
-        df["cmag"] = df["mag"] - 5*np.log10(df["topocentricdist"]*df["heliocentricdist"])
+        
         
         
         return _phase_curve(
             mpcdesignation = self.mpcdesignation,
             ssobjectid = self.ssobjectid,
-            df = df[['filter','mag', 'magsigma', 'topocentricdist', 'heliocentricdist', 'phaseangle', "cmag", *filter_cols]],
+            df = df[['filter','mag', 'magsigma', 'topocentricdist', 'heliocentricdist', 'phaseangle', *filter_cols]],
             filters = filters,
             title = title,
             library = library,
@@ -304,8 +295,7 @@ class Object():
         if end_time:
             df = df.loc[df['midpointtai'] <= end_time].copy()
         
-
-        return objects_in_field(
+        return _plot_orbit(
             df = df[['filter','heliocentricx', 'heliocentricy', 'heliocentricz']],
             #mpcdesignation = self.mpcdesignation,
             #ssobjectid = self.ssobjectid,
@@ -319,18 +309,6 @@ class Object():
             cache_data = cache_data,
             **orbital_elements
         )
-    
-    def find_jpl_matches(self, limit : Optional[int] = 20):
-        t_j = round(self.tisserand, 3)
-        
-        
-        query = '{"t_jup":%s}'%(str(t_j))        
-       
-        resp = requests.get(f'https://www.asterank.com/api/asterank?query={query}&limit={limit}').json()
-        
-        df = pd.DataFrame.from_records(resp)
-
-        return df
     
     def clear(
         self,

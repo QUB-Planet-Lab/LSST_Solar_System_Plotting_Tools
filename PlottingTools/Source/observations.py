@@ -36,8 +36,8 @@ pd.options.mode.chained_assignment = None
 TIMEFRAME = ["daily", "monthly", "yearly"]
 
 def _detection_distributions(
-    df,
     start_time : float, end_time : float,
+    df : Optional[pd.DataFrame] = None,
     title : Optional[str] = None,
     timeframe : Literal["daily", "monthly", "yearly"] = "daily",
     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
@@ -47,7 +47,22 @@ def _detection_distributions(
     
     if timeframe not in TIMEFRAME:
         raise Exception(f"Timeframe must be one of {TIMEFRAME}")
+    
+    
+    if df is None:
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
         
+        conditions = create_orbit_conditions(**orbital_elements)
+
+        df = db.query(
+            select(diasource.c['midpointtai'], ).join(mpcorb, mpcorb.c['ssobjectid'] == diasource.c['ssobjectid']).distinct(diasource.c['ssobjectid']).where(
+                diasource.c['midpointtai'] >= start_time,
+                diasource.c['midpointtai'] <= end_time,
+                *conditions
+            )
+        )
+
+    
     if timeframe == "daily":
          df['datetime'] = [date[0:10] for date in format_times(df['midpointtai'].tolist(), _format="ISO")]
             
@@ -68,7 +83,6 @@ def _detection_distributions(
     hp.fig.suptitle(title if title else f"Detection distributions")
 
     hp.fig.autofmt_xdate()
-    
     
     '''
     hp.ax.set_xlabel("Date")

@@ -17,6 +17,7 @@ from database.empty_response import empty_response
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from typing import Optional, Literal
 
@@ -33,8 +34,8 @@ ELEMENTS = {'e' : {'label': 'Eccentricity','unit' : None},\
            }
 
 def _tisserand_relations(
-    df,
     y : Literal["incl", "q", "e", "a"],
+    df : Optional[pd.DataFrame] = None,
     start_time : Optional[float] = None,
     end_time : Optional[float] = None,
     title : Optional[str] = None,
@@ -42,7 +43,47 @@ def _tisserand_relations(
     cache_data: Optional[bool] = False,
     **orbital_elements
 ):
-    start_time, end_time = validate_times(start_time = start_time, end_time = end_time)    
+    if df is None:
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+    
+        conditions = []
+
+        if start_time:
+            conditions.append(diasource.c['midpointtai'] >= start_time)
+
+        if end_time:
+            conditions.append(diasource.c['midpointtai'] <= end_time)
+
+
+        conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+
+        if y == "a":
+            qy = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
+        else:
+            qy = mpcorb.c[y]
+
+
+        a_J = 5.2038 # au
+
+        tisserand = (a_J / (mpcorb.c['q'] / (1 - mpcorb.c['e'])) + 2 * func.cos(mpcorb.c['incl']) * func.sqrt((mpcorb.c['q'] / (1 - mpcorb.c['e'])) / a_J * (1 - func.power(mpcorb.c['e'], 2)))).label("tisserand")
+
+
+        df = db.query(
+            select(
+                distinct(mpcorb.c['ssobjectid']), qy, tisserand,
+                diasource.c['filter']).join(
+                diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
+            ).where(
+                    *conditions
+            )
+        )
+        if df.empty:
+            return empty_response(
+                    start_time = start_time,
+                    end_time = end_time,
+                    **orbital_elements
+                )
+
     
     if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
         raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
@@ -69,9 +110,9 @@ def _tisserand_relations(
         return hp
 
 def _orbital_relations(
-    df,
     x : Literal["incl", "q", "e", "a"],
     y : Literal["incl", "q", "e", "a"],
+    df : Optional[pd.DataFrame] = None,
     start_time : Optional[float] = None, end_time : Optional[float] = None,
     title : Optional[str] = None,
     colorbar: bool = True,
@@ -79,6 +120,48 @@ def _orbital_relations(
     cache_data: Optional[bool] = False,
     **orbital_elements
 ):
+    if df is None:
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        
+        conditions = []
+    
+        if start_time:
+            conditions.append(diasource.c['midpointtai'] >= start_time)
+
+        if end_time:
+            conditions.append(diasource.c['midpointtai'] <= end_time)
+
+        conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+
+        if x == "a":
+            qx = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
+        else:
+            qx = mpcorb.c[x]
+
+        if y == "a":
+            qy = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
+        else:
+            qy = mpcorb.c[y]
+
+        df = db.query(
+            select(
+                distinct(mpcorb.c['ssobjectid']), qx , qy, diasource.c['filter']).join(
+                diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
+
+            ).where(
+                    *conditions
+            )
+        )
+        
+        if df.empty:
+            return empty_response(
+                    start_time = start_time,
+                    end_time = end_time,
+                    **orbital_elements
+                )
+
+        
+        
     if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
         raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
     
@@ -241,7 +324,7 @@ def base(
         
     
 def eccentricity(
-    df,
+    df : Optional[pd.DataFrame] = None,
     filters: Optional[list] = None,
     start_time : Optional[float] = None,
     end_time : Optional[float] = None,
@@ -250,6 +333,38 @@ def eccentricity(
     cache_data: Optional[bool] = False,
     **orbital_elements
 ):
+    if df is None:
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        conditions = []
+       
+        if start_time:
+            conditions.append(diasource.c['midpointtai'] >= start_time)
+
+        if end_time:
+            conditions.append(diasource.c['midpointtai'] <= end_time)
+
+        if filters:
+            filters = validate_filters(list(set(filters)))
+            conditions.append(diasource.c['filter'].in_(filters))
+
+        create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        stmt = select(
+            distinct(mpcorb.c['ssobjectid']), mpcorb.c['e'], diasource.c['filter']).join(
+            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+        
+        df = db.query(
+            stmt.where(
+                *conditions
+            ) 
+       )
+        if df.empty:
+            return empty_response(
+                filters = filters,
+                start_time = start_time,
+                end_time = end_time,
+                **orbital_elements
+            )
     
     return base(
         df = df,
@@ -264,7 +379,7 @@ def eccentricity(
         
     
 def perihelion(
-    df,
+    df : Optional[pd.DataFrame] = None,
     filters: Optional[list] = None,
     start_time : Optional[float] = None, end_time : Optional[float] = None,
     plot_type: Literal[PLOT_TYPES] = 'BOX',
@@ -272,6 +387,38 @@ def perihelion(
     cache_data: Optional[bool] = False,
     **orbital_elements
 ):
+    if df is None:
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        conditions = []
+       
+        if start_time:
+            conditions.append(diasource.c['midpointtai'] >= start_time)
+
+        if end_time:
+            conditions.append(diasource.c['midpointtai'] <= end_time)
+
+        if filters:
+            filters = validate_filters(list(set(filters)))
+            conditions.append(diasource.c['filter'].in_(filters))
+
+        create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        stmt = select(distinct(mpcorb.c['ssobjectid']), mpcorb.c['q'], diasource.c['filter']).join(
+            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+            
+        df = db.query(
+            stmt.where(
+                *conditions
+            ) 
+       )
+        if df.empty:
+            return empty_response(
+                filters = filters,
+                start_time = start_time,
+                end_time = end_time,
+                **orbital_elements
+            )
+        
     return base(
         df = df,
         filters = filters,
@@ -285,7 +432,7 @@ def perihelion(
         
     
 def inclination(
-    df,
+    df : Optional[pd.DataFrame] = None,
     filters: Optional[list] = None,
     start_time : Optional[float] = None, end_time : Optional[float] = None,
     plot_type: Literal[PLOT_TYPES] = 'BOX',
@@ -294,7 +441,38 @@ def inclination(
     **orbital_elements
 ):
     
+    if df is None:
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        conditions = []
+       
+        if start_time:
+            conditions.append(diasource.c['midpointtai'] >= start_time)
 
+        if end_time:
+            conditions.append(diasource.c['midpointtai'] <= end_time)
+
+        if filters:
+            filters = validate_filters(list(set(filters)))
+            conditions.append(diasource.c['filter'].in_(filters))
+
+        create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        stmt = stmt = select(distinct(mpcorb.c['ssobjectid']),mpcorb.c['incl'], diasource.c['filter']).join(
+            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+        
+        df = db.query(
+            stmt.where(
+                *conditions
+            ) 
+       )
+        if df.empty:
+            return empty_response(
+                filters = filters,
+                start_time = start_time,
+                end_time = end_time,
+                **orbital_elements
+            )
+        
     return base(
         df = df,
         filters = filters,
@@ -307,7 +485,7 @@ def inclination(
     )
         
 def semi_major_axis(
-    df,
+    df : Optional[pd.DataFrame] = None,
     filters: Optional[list] = None,
     start_time : Optional[float] = None,
     end_time : Optional[float] = None,
@@ -316,7 +494,38 @@ def semi_major_axis(
     cache_data: Optional[bool] = False,
     **orbital_elements
 ):
+    if df is None:
+        start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        conditions = []
+       
+        if start_time:
+            conditions.append(diasource.c['midpointtai'] >= start_time)
 
+        if end_time:
+            conditions.append(diasource.c['midpointtai'] <= end_time)
+
+        if filters:
+            filters = validate_filters(list(set(filters)))
+            conditions.append(diasource.c['filter'].in_(filters))
+
+        create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['q'], (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
+            diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+        
+        df = db.query(
+            stmt.where(
+                *conditions
+            ) 
+       )
+        if df.empty:
+            return empty_response(
+                filters = filters,
+                start_time = start_time,
+                end_time = end_time,
+                **orbital_elements
+            )
+        
     return base(
         df = df,
         filters = filters,
