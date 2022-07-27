@@ -9,7 +9,7 @@ from database.schemas import diasource, mpcorb, ssobjects, sssource
 from database.validators import validate_times, validate_filters, validate_orbital_elements
 from database.format_time import format_times
 from database.conditions import create_orbit_conditions
-
+from database.empty_response import empty_response
 
 
 from plots import Plot, ScatterPlot
@@ -191,11 +191,10 @@ def objects_in_field(
 
         if df.empty:
             return empty_response(
-                ssobjectid = ssobjectid,
-                mpcdesignation = mpcdesignation,
                 start_time = start_time,
                 end_time = end_time,
-                filters = filters
+                filters = filters,
+                **orbital_elements
             )    
     
     if projection:
@@ -225,7 +224,7 @@ def objects_in_field(
         lc.ax.set_ylabel("Y (au)")
         if projection == "3d":
             lc.ax.set_zlabel("Z (au)")
-        lc.ax.set_title(title if title else f"{mpcdesignation if mpcdesignation else ssobjectid if ssobjectid else ''} Orbit plot")            
+        lc.ax.set_title(title if title else f"Orbit plot")            
         lc.ax.legend(loc="upper right")
                     
     else:
@@ -242,7 +241,7 @@ def objects_in_field(
             lc.ax.set_xlabel("X (au)")
             lc.ax.set_ylabel("Y (au)")
             lc.ax.set_zlabel("Z (au)")
-            lc.ax.set_title(title if title else f"{mpcdesignation if mpcdesignation else ssobjectid if ssobjectid else ''} Orbit plot")
+            lc.ax.set_title(title if title else f"Orbit plot")
     
     return lc
     
