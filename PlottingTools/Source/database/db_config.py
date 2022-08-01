@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Optional
+#from typing import Literal, Optional 
 
 @dataclass
 class DBConfig:
@@ -12,8 +12,8 @@ class DBConfig:
     db_name : str
     host: str
     password : str
-    dialect : Literal['postgresql', 'mysql', 'sqlite3']
-    driver : Optional[Literal['psycopg2', '']] = ''
+    dialect : str#Literal['postgresql', 'mysql', 'sqlite3']
+    driver : str #Optional[Literal['psycopg2', '']] = ''
     
     
     @property

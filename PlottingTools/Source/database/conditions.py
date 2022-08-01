@@ -4,11 +4,11 @@ from .validators import validate_orbital_elements
 
 def create_orbit_conditions(conditions : list = [], **orbital_elements):
     
-    min_a, max_a, min_incl, max_incl, min_peri, max_peri, min_e, max_e = validate_orbital_elements(**orbital_elements)
+    min_a, max_a, min_incl, max_incl, min_q, max_q, min_e, max_e = validate_orbital_elements(**orbital_elements)
 
-    if min_peri:
+    if min_q:
         conditions.append(mpcorb.c['q'] >= min_peri)
-    if max_peri:
+    if max_q:
         conditions.append(mpcorb.c['q'] <= max_peri)
         
     if min_incl:

@@ -36,3 +36,10 @@ class DB:
                     postgresql_readonly = True
                 ).execute(stmt)
         return results
+    
+    def transaction(self, stmts: list):
+        results = []
+        with self.generate_connection() as conn:
+            for stmt in stmts:
+                results.append(pd.read_sql(stmt, conn))
+        return results

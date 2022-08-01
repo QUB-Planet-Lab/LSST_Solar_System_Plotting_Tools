@@ -58,7 +58,7 @@ def validate_semi_major_axis(min_a : float = None, max_a:float = None):
     return min_a, max_a
 
 
-elements = ['min_a', 'max_a', 'min_e', 'max_e', 'min_peri', 'max_peri', 'min_incl', 'max_incl']
+elements = ['min_a', 'max_a', 'min_e', 'max_e', 'min_q', 'max_q', 'min_incl', 'max_incl']
 
 def validate_orbital_elements(**kwargs):
     for kwarg in kwargs:
@@ -73,8 +73,8 @@ def validate_orbital_elements(**kwargs):
         max_incl = kwargs['max_incl'] if 'max_incl' in kwargs else None
     )
     min_peri, max_peri = validate_perihelion(
-        min_peri = kwargs['min_peri'] if 'min_peri' in kwargs else None,
-        max_peri = kwargs['max_peri'] if 'max_peri' in kwargs else None
+        min_peri = kwargs['min_q'] if 'min_peri' in kwargs else None,
+        max_peri = kwargs['max_q'] if 'max_peri' in kwargs else None
     )
     min_e, max_e = kwargs['min_e'] if 'min_e' in kwargs else None, kwargs['max_e'] if 'max_e' in kwargs else None
     

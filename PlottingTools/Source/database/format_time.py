@@ -25,7 +25,6 @@ def format_times(times : list, _format : Literal["ISO", "MJD"] = "MJD"):
                 try:
                     return Time(times, format='mjd').to_value('mjd')
                 except:
-                    print(times)
                     raise Exception("Invalid times used in input. Times must either be in ISO or MJD format")
 
         else:
