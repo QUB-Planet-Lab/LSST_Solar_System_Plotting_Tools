@@ -88,10 +88,13 @@ def _phase_curve(
             if not df_filter.empty:
                 pc.ax.errorbar(data = df_filter , x = "phaseangle", y = "cmag", yerr=df_filter['magsigma'], label=_filter, marker=FILTER_SYMBOLS[_filter], c = COLOR_SCHEME[_filter], ls = 'none')
                 
-                if fit == "HG":               
-                    _ph = sorted(df_filter["phaseangle"])
-                    _mag = HG.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12err'])
-                    pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter])  
+                if fit == "HG":    
+                    try:
+                        _ph = sorted(df_filter["phaseangle"])
+                        _mag = HG.evaluate(np.deg2rad(_ph), df_filter[f'{_filter}h'], df_filter[f'{_filter}g12err'])
+                        pc.ax.plot(_ph, _mag, c = COLOR_SCHEME[_filter])
+                    except:
+                        print("Unable to append HG fit to phase curve.")
                 '''
                 #TO-DO - fit
                 if fit == "HG1G2":

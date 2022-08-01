@@ -18,6 +18,7 @@ import numpy as np
 
 from database.validators import validate_times, validate_filters
 FILTERS = ["g", "r", "i", "z", "y", "u"]
+
 class Object():
         
     def __init__(self, ssobjectid: Optional[str] = None, mpcdesignation: Optional[str] = None, lazy_loading : Optional[bool] = True): 
@@ -78,6 +79,10 @@ class Object():
             #add empty_response here.
             raise Exception("No results returned")
         
+        
+        if self.T_J:
+            self.orbital_parameters['tisserand'] = self.T_J
+            
         if not self.ssobjectid:
             self.ssobjectid = str(self.orbital_parameters['ssobjectid'][0])
         
@@ -159,6 +164,11 @@ class Object():
             if self.orbital_parameters['e'][0] < 1:
 
                 self.T_J = a_J / self.orbital_parameters['a'][0] + 2 * cos(self.orbital_parameters['incl'][0]) * sqrt(self.orbital_parameters['a'][0] / a_J * (1 - self.orbital_parameters['e'][0]**2))
+                
+                self.orbital_parameters['tisserand'] = self.T_J
+
+                
+                
                 return self.T_J
             else:
                 print("Tisserand parameter is undefined for this object")
@@ -187,9 +197,9 @@ class Object():
         else:
             df = self.curve_df.copy(deep = True)
 
-        # work on replot
         
         start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
+        
         filter_cols = []
         if filters:
             filters = validate_filters(list(set(filters)))
@@ -197,12 +207,9 @@ class Object():
                 filter_cols.extend([f'{_filter}h', f'{_filter}g12err', f'{_filter}g12'])
                 
         if start_time:
-            df = df.loc[df['midpointtai'] >= start_time].copy() # copy() silences warnings ~ effect on performance needs evaluated
+            df = df.loc[df['midpointtai'] >= start_time].copy() 
         if end_time:
             df = df.loc[df['midpointtai'] <= end_time].copy()
-        
-        
-        
         
         return _phase_curve(
             mpcdesignation = self.mpcdesignation,
@@ -214,7 +221,31 @@ class Object():
             fit = fit,
             cache_data = cache_data
         )
+    
+    def single_phase_curves(
+        self,
+        filters: list = FILTERS,
+        title: str = None,
+        fit = None,
+        cache_data: Optional[bool] = False
+    ):
         
+        filters = validate_filters(filters)
+        
+        plots = []
+
+            
+        for _filter in filters:
+            pc = self.phase_curve(
+                filters = [_filter],
+                title = title,
+                fit = fit,
+                cache_data = cache_data
+            )
+            plots.append(pc)
+            
+        
+        return plots
     
     def light_curve(self, 
                     filters: Optional[list] = None,
@@ -223,7 +254,6 @@ class Object():
                     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                     library: Optional[str] = "matplotlib",
                     cache_data: Optional[bool] = False
-
                    ):
         if self.lazy_loading == True:
             if self.curve_df is None:
@@ -231,7 +261,6 @@ class Object():
                 df = self.get_curve_data()
                 
             else: # clean-up names here
-                #data already here...
                 df = self.curve_df.copy(deep = True)
         else:
             df = self.curve_df.copy(deep = True)
@@ -262,17 +291,37 @@ class Object():
             cache_data = cache_data
         )
     
+    
+    def single_light_curves(
+        self,
+        filters: list = FILTERS,
+        title: str = None,
+        cache_data: Optional[bool] = False
+    ):
+        filters = validate_filters(filters)
+        
+        plots = []
+
+            
+        for _filter in filters:
+            lc = self.light_curve(
+                filters = [_filter],
+                title = title,
+                cache_data = cache_data
+            )
+            plots.append(lc)
+            
+        return plots
+    
+    
     def plot_orbit(self,
                 filters: Optional[list] = None,
                 start_time : Optional[float] = None, end_time : Optional[float] = None,
                 title : Optional[str] = None,
-                time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                 projection: Optional[Literal['2d', '3d']] = '2d',
-                library: Optional[str] = "matplotlib",
+                library: Optional[str] = "seaborn",
                 cache_data: Optional[bool] = False,
-                **orbital_elements # is orbital elements needed?
                 ): 
-                # nice to animate this aswell with theoretical data if available
         
         start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
         
@@ -307,13 +356,13 @@ class Object():
             projection = projection,
             library = library,
             cache_data = cache_data,
-            **orbital_elements
         )
     
     def clear(
         self,
         curve_df : Optional[bool] = True,
-        orbit_df : Optional[bool] = True
+        orbit_df : Optional[bool] = True,
+        
     ):
         if curve_df:
             self.curve_df = None

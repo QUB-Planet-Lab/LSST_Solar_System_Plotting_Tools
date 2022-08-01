@@ -21,8 +21,8 @@ ORB_PARAMS = ["eccentricity", "perihelion", "semi_major_axis", "inclination"]
 
 
 
-class Collection():
-    def __init__(self, lazy_loading: Optional[bool] = True, start_time : Optional[float] = None, end_time : Optional[float] = None, **orbital_elements):
+class Objects():
+    def __init__(self, start_time , end_time, lazy_loading: Optional[bool] = True,  **orbital_elements):
 
         self.lazy_loading = lazy_loading
         
@@ -79,12 +79,12 @@ class Collection():
             'tisserand' : tisserand
         }
         
-        self.data = None
 
         if lazy_loading == False:
-            #load data now.
             self.data = self.get_data(list(self.table_columns.keys()))
-    
+        else:
+            self.data = None
+            
     def get_data(self, cols):
         # THIS DISTINCT WORKS
         
@@ -97,11 +97,11 @@ class Collection():
                         sssource, sssource.c['ssobjectid'] == mpcorb.c['ssobjectid']
                     ).distinct(mpcorb.c['ssobjectid']).where(*self.conditions)
                 )
+        
         if self.data is None:
             self.data = df
         
         else:
-            #print(df)
             self.data = self.data.merge(
                 df,
                 on = ['ssobjectid', 'midpointtai']
@@ -110,8 +110,6 @@ class Collection():
         return self.data
     
     def check_data(self, cols_required):
-        #print(cols_required)
-        #print(self.data.columns)
         
         if self.lazy_loading:
             if self.data is None:
@@ -123,97 +121,36 @@ class Collection():
                    
                     if (col in self.data.columns):
                         pass
-                        # This needs cleaned up
                         
-                        #cols_required = cols_required.remove(col)
                     else:
                         c.append(col)
                     
-                #print(f"Required {cols_required}, {c}")
-                #if cols_required:
-                    # now get columns
-                df = self.get_data(c)
-                    #merge with existing dataframe
-                        
-                #df = self.data
+                df = self.get_data(c)                        
         else:
             df = self.data #self.get_data(list(self.table_columns.keys()))
         return df
     
-    def detection_distributions(self,
-                                start_time : Optional[float] = None,
-                                end_time : Optional[float] = None,
-                                time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
-                                    timeframe : Literal["daily", "monthly", "year"] = "daily",
-
-                                cache_data: Optional[bool] = False):
-        # hex plots
-        # fix for monthly and yearly
-        
-        #start_time, end_time = validate_times(start_time = start_time, end_time = end_time)
-        
-        df = self.check_data(
-            ['midpointtai', 'ssobjectid']
-        )
-            
-        if self.start_time:
-            df = df.loc[df['midpointtai'] >= self.start_time].copy()
-        
-        if self.end_time:
-            df = df.loc[df['midpointtai'] <= self.end_time].copy()
-            
-        
-        return _detection_distributions(
-            df = df[['midpointtai', 'ssobjectid']],
-            start_time = start_time if start_time else self.start_time,
-            end_time = end_time if end_time else self.end_time,
-            time_format = time_format,
-            cache_data = cache_data,
-            timeframe = timeframe
-        )
-    
-    #add _orbital_relations
     
     def plot_objects(self,
                     filters: Optional[list] = None,
                     title : Optional[str] = None,
-                     start_time : Optional[float] = None, end_time : Optional[float] = None,
+                     
                     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                     projection: Optional[Literal['2d', '3d']] = '2d',
                     library: Optional[str] =  "seaborn",
                     cache_data: Optional[bool] = False
                     ): 
-        # plot orbits of all items. Nice to animate in the future
-        #objects_in_field
-        
-        '''
-        currently specifying start and end, could have additional as long as they are in the range from the dataframe or make a new call.
-        
-        start_time, end_time = validate_times(
-            start_time = start_time if start_time else self.start_time,
-            end_time = end_time if end_time else self.end_time,
-        )
-        '''
         
         df = self.check_data(
             ['ssobjectid', 'filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid', 'midpointtai']
         )
-        
-        if self.start_time:
-            df = df.loc[df['midpointtai'] >= self.start_time].copy()
-        
-        if self.end_time:
-            df = df.loc[df['midpointtai'] <= self.end_time].copy()
-            
-        if filters:
-            df = df.loc[df['filter'].isin(filters)].copy()
-        
-        
+     
+           
         return objects_in_field(
             df[['filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid']],
             filters = filters,
-            start_time = start_time,
-            end_time = end_time,
+            start_time = self.start_time,
+            end_time = self.end_time,
             title = title,
             time_format = time_format,
             projection = projection,
@@ -229,46 +166,93 @@ class Collection():
             max_e = self.max_e
         )
     
-    def orbital_relations(self,
-                         x : Literal["incl", "q", "e", "a"],
-                         y : Literal["incl", "q", "e", "a"],
-                         start_time : Optional[float] = None, end_time : Optional[float] = None,
-                         title : Optional[str] = None,
-                         colorbar: bool = True,
-                         plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
-                         cache_data: Optional[bool] = False
-                         ):
+    def orbital_relations(
+        self,
+        x : Literal["incl", "q", "e", "a"],
+        y : Literal["incl", "q", "e", "a"],
+        title : Optional[str] = None,
+        colorbar: bool = True,
+        plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
+        cache_data: Optional[bool] = False
+):
         
         
         df = self.check_data(
             ['ssobjectid','midpointtai', x, y]
         )
-            
-        if self.start_time:
-            df = df.loc[df['midpointtai'] >= self.start_time].copy()
-        
-        if self.end_time:
-            df = df.loc[df['midpointtai'] <= self.end_time].copy()
 
-        
+
         return _orbital_relations(
             df = df[[x, y, 'ssobjectid', 'midpointtai']],
             x = x, 
             y = y,
-            start_time = start_time if start_time else self.start_time, 
-            end_time = end_time if end_time else self.end_time,
+            start_time = self.start_time, 
+            end_time = self.end_time,
             plot_type = plot_type, title = title,
             cache_data = cache_data,
-            min_a = self.min_a, max_a = self.max_a, 
+            min_a = self.min_a, 
+            max_a = self.max_a, 
             min_incl = self.min_incl, max_incl = self.max_incl, 
             min_peri = self.min_peri, max_peri = self.max_peri, 
             min_e = self.min_e, max_e = self.max_e
        )
                            
+    def orbital_relations_hexplot(
+             self,
+             x : Literal["incl", "q", "e", "a"],
+             y : Literal["incl", "q", "e", "a"],
+             title : Optional[str] = None,
+             colorbar: bool = True,
+             cache_data: Optional[bool] = False
+    ):
+        
+        return self.orbital_relations(
+            plot_type = "2d_hex",
+            x = x,
+            y = y,
+            title = title,
+            colorbar = True,
+            cache_data = cache_data
+        )
+    
+    def orbital_relations_scatter(
+             self,
+             x : Literal["incl", "q", "e", "a"],
+             y : Literal["incl", "q", "e", "a"],
+             title : Optional[str] = None,
+             colorbar: bool = True,
+             cache_data: Optional[bool] = False
+    ):
+        
+        return self.orbital_relations(
+            plot_type = "scatter",
+            x = x,
+            y = y,
+            title = title,
+            colorbar = True,
+            cache_data = cache_data
+        )
+    
+    def orbital_relations_histogram(
+             self,
+             x : Literal["incl", "q", "e", "a"],
+             y : Literal["incl", "q", "e", "a"],
+             title : Optional[str] = None,
+             colorbar: bool = True,
+             cache_data: Optional[bool] = False
+    ):
+        
+        return self.orbital_relations(
+            plot_type = "2d_histogram",
+            x = x,
+            y = y,
+            title = title,
+            colorbar = True,
+            cache_data = cache_data
+        )
     
     def tisserand_relations(self,
                             y : Literal["incl", "q", "e", "a"],
-                            start_time : Optional[float] = None, end_time : Optional[float] = None,
                             title : Optional[str] = None,
                             plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
                             cache_data: Optional[bool] = False
@@ -278,12 +262,7 @@ class Collection():
             ['ssobjectid', 'midpointtai', 'tisserand', y]
         )
         
-        if self.start_time:
-            df = df.loc[df['midpointtai'] >= self.start_time].copy()
         
-        if self.end_time:
-            df = df.loc[df['midpointtai'] <= self.end_time].copy()
-            
         
         tr = _tisserand_relations(
             df = df[['tisserand', y, 'ssobjectid']],
@@ -309,10 +288,8 @@ class Collection():
         return tr
 
     def orbital_param_distribution(self,
-                                    parameter : Literal[ORB_PARAMS],
+                                    parameter : Literal["e", "a", "incl", "q"],
                                     filters: Optional[list] = None,
-                                    start_time : Optional[float] = None, 
-                                    end_time : Optional[float] = None,
                                     plot_type: Literal[PLOT_TYPES] = 'BOX',
                                     title : Optional[str] = None,
                                     library: Optional[str] = "seaborn",
@@ -321,36 +298,25 @@ class Collection():
         
         parameter = parameter.lower()
         
-        if parameter not in ORB_PARAMS:
-            raise Exception(f"Orbital parameter must be one of: {ORB_PARAMS}")
+        if parameter not in ["e", "a", "incl", "q"]:
+            raise Exception(f"Orbital parameter must be one of: e, a, incl, q")
         
         required_cols = ['ssobjectid', 'midpointtai', 'filter']
         
-        if parameter == "eccentricity":
+        if parameter == "e":
             required_cols.append("e")
-        if parameter == "semi_major_axis":
+        if parameter == "a":
             required_cols.append("a")
-        if parameter == "inclination":
+        if parameter == "incl":
             required_cols.append("incl")
-        if parameter == "perihelion":
+        if parameter == "q":
             required_cols.append("q")
             
         df = self.check_data(
             required_cols
         )
         
-        
-        #if start_time:
-        #if end_time:
-        if self.start_time:
-            df = df.loc[df['midpointtai'] >= self.start_time].copy()
-        
-        if self.end_time:
-            df = df.loc[df['midpointtai'] <= self.end_time].copy()
-            
-        if filters:
-            df = df.loc[df['filter'].isin(filters)].copy()
-            
+
         args = dict(
             filters = filters,
             plot_type = plot_type,
@@ -369,31 +335,118 @@ class Collection():
             max_e = self.max_e
         )
         
-        if parameter == "eccentricity":
+        if parameter == "e":
             return eccentricity(
                 df[['filter', 'e', 'ssobjectid']],
                 **args
             )
-        if parameter == "inclination":
+        if parameter == "incl":
             return inclination(
                 df[['filter', 'incl', 'ssobjectid']], 
                 **args
             )
-        if parameter == "semi_major_axis":
+        if parameter == "a":
             return semi_major_axis(
                 df[['filter', 'a', 'ssobjectid']], 
                 **args
             )
-        if parameter == "perihelion":
+        if parameter == "q":
             return perihelion(
                 df[['filter', 'q', 'ssobjectid']], 
                 **args
             )
         
         #getter setter for __init__ that calls functions and updates plots
-        
+    def e_distributions(
+        self,
+        filters: Optional[list] = None,
+        plot_type: Literal[PLOT_TYPES] = 'BOX',
+        title : Optional[str] = None,
+        library: Optional[str] = "seaborn",
+        cache_data: Optional[bool] = False
+    ):
+        return self.orbital_param_distribution(
+            parameter = "e",
+            filters = filters,
+            plot_type = plot_type,
+            title = title,
+            cache_data = cache_data,
+            library = library
+        )
+    
+    def a_distributions(
+        self,
+        filters: Optional[list] = None,
+        plot_type: Literal[PLOT_TYPES] = 'BOX',
+        title : Optional[str] = None,
+        library: Optional[str] = "seaborn",
+        cache_data: Optional[bool] = False
+    ):
+        return self.orbital_param_distribution(
+            parameter = "a",
+            filters = filters,
+            plot_type = plot_type,
+            title = title,
+            cache_data = cache_data,
+            library = library
+        )
+    def q_distributions(
+        self,
+        filters: Optional[list] = None,
+        plot_type: Literal[PLOT_TYPES] = 'BOX',
+        title : Optional[str] = None,
+        library: Optional[str] = "seaborn",
+        cache_data: Optional[bool] = False
+    ):
+        return self.orbital_param_distribution(
+            parameter = "q",
+            filters = filters,
+            plot_type = plot_type,
+            title = title,
+            cache_data = cache_data,
+            library = library
+        )
+    
+    def incl_distributions(
+        self,
+        filters: Optional[list] = None,
+        plot_type: Literal[PLOT_TYPES] = 'BOX',
+        title : Optional[str] = None,
+        library: Optional[str] = "seaborn",
+        cache_data: Optional[bool] = False
+    ):
+        return self.orbital_param_distribution(
+            parameter = "incl",
+            filters = filters,
+            plot_type = plot_type,
+            title = title,
+            cache_data = cache_data,
+            library = library
+        )
+    
+    def all_orbital_distributions(
+        self,
+        filters: Optional[list] = None,
+        plot_type: Literal[PLOT_TYPES] = 'BOX',
+        title : Optional[str] = None,
+        library: Optional[str] = "seaborn",
+        cache_data: Optional[bool] = False
+    ):
+        plots = []
+        for element in ["a", "q", "incl", "e"]:
+            plots.append(
+                self.orbital_param_distribution(
+                    parameter = element,
+                    title = title,
+                    cache_data = cache_data,
+                    filters = filters
+                )
+            )
+                         
+        return plots
+                
+
     def clear(self):
-        #clear all the dataframes
         self.data = None
         return
         

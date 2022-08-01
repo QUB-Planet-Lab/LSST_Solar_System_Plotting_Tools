@@ -166,23 +166,17 @@ def _orbital_relations(
         raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
     
     if plot_type == "scatter":
-        return ScatterPlot(data = df, x=x, y=y, xlabel=x, ylabel=y, title = title)
+        return ScatterPlot(data = df, x=x, y=y, xlabel = ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '', ylabel =  ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title if title else f"{x} - {y}" )
     
     if plot_type == "2d_hex":
         
-        hp = HistogramPlot(data = df, x = x, y = y, projection="2d_hex",  colorbar = colorbar)
-        hp.ax.set_title(title if title else f"{x} - {y}")
-        hp.ax.set_xlabel(ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '')
-        hp.ax.set_ylabel(ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
+        hp = HistogramPlot(data = df, x = x, y = y, projection="2d_hex",  colorbar = colorbar, xlabel = ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '', ylabel =  ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title if title else f"{x} - {y}" )
+        
         
         return hp
     
     if plot_type == "2d_hist":
-        hp = HistogramPlot(data = df, x = x, y = y, projection="2d", colorbar = colorbar)
-        
-        hp.ax.set_title(title if title else f"{x} - {y}")
-        hp.ax.set_xlabel(ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '')
-        hp.ax.set_ylabel(ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
+        hp = HistogramPlot(data = df, x = x, y = y, projection="2d", colorbar = colorbar, xlabel = ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '', ylabel = ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
         
         return hp
     
@@ -246,8 +240,6 @@ def base(
             
             plot_template = BoxPlot(data = df, library = library, **args)
             if library == "seaborn":
-                #print(plot_template)
-                #print(plot_template.ax.boxes)
                 
                 #Seaborn color customisation required
                 for i, patch in enumerate(plot_template.ax.artists):
@@ -331,6 +323,7 @@ def eccentricity(
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
     cache_data: Optional[bool] = False,
+    distinct: Optional[bool] = False,
     **orbital_elements
 ):
     if df is None:
@@ -347,10 +340,10 @@ def eccentricity(
             filters = validate_filters(list(set(filters)))
             conditions.append(diasource.c['filter'].in_(filters))
 
-        create_orbit_conditions(conditions = conditions, **orbital_elements)
+        conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
         
         stmt = select(
-            distinct(mpcorb.c['ssobjectid']), mpcorb.c['e'], diasource.c['filter']).join(
+            distinct(mpcorb.c['ssobjectid']).label("ssobjectid") if distinct else mpcorb.c['ssobjectid'], mpcorb.c['e'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
         
         df = db.query(
@@ -369,7 +362,8 @@ def eccentricity(
     return base(
         df = df,
         filters = filters,
-        start_time = start_time, end_time = end_time,
+        start_time = start_time,
+        end_time = end_time,
         plot_type = plot_type,
         title = title,
         element = 'e',
@@ -385,6 +379,7 @@ def perihelion(
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
     cache_data: Optional[bool] = False,
+    distinct: Optional[bool] = False,
     **orbital_elements
 ):
     if df is None:
@@ -401,9 +396,9 @@ def perihelion(
             filters = validate_filters(list(set(filters)))
             conditions.append(diasource.c['filter'].in_(filters))
 
-        create_orbit_conditions(conditions = conditions, **orbital_elements)
+        conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
         
-        stmt = select(distinct(mpcorb.c['ssobjectid']), mpcorb.c['q'], diasource.c['filter']).join(
+        stmt = select( distinct(mpcorb.c['ssobjectid']).label("ssobjectid") if distinct else mpcorb.c['ssobjectid'], mpcorb.c['q'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
             
         df = db.query(
@@ -438,6 +433,7 @@ def inclination(
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
     cache_data: Optional[bool] = False,
+    distinct: Optional[bool] = False,
     **orbital_elements
 ):
     
@@ -455,9 +451,10 @@ def inclination(
             filters = validate_filters(list(set(filters)))
             conditions.append(diasource.c['filter'].in_(filters))
 
-        create_orbit_conditions(conditions = conditions, **orbital_elements)
-        
-        stmt = stmt = select(distinct(mpcorb.c['ssobjectid']),mpcorb.c['incl'], diasource.c['filter']).join(
+        conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+                
+            
+        stmt =  select(mpcorb.c['incl'], diasource.c['filter'], distinct(mpcorb.c['ssobjectid']).label("ssobjectid") if distinct else mpcorb.c['ssobjectid']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
         
         df = db.query(
@@ -492,6 +489,7 @@ def semi_major_axis(
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
     cache_data: Optional[bool] = False,
+    distinct: Optional[bool] = False,
     **orbital_elements
 ):
     if df is None:
@@ -508,9 +506,18 @@ def semi_major_axis(
             filters = validate_filters(list(set(filters)))
             conditions.append(diasource.c['filter'].in_(filters))
 
-        create_orbit_conditions(conditions = conditions, **orbital_elements)
+        conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
         
-        stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'), mpcorb.c['q'], (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
+        cols = []
+        
+        if distinct:
+            cols.append(distinct(mpcorb.c['ssobjectid']).label('ssobjectid'))
+                        
+        else:
+            cols.append(mpcorb.c['ssobjectid'])
+                        
+                        
+        stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid') if distinct else mpcorb.c['ssobjectid'],mpcorb.c['q'], (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
         
         df = db.query(

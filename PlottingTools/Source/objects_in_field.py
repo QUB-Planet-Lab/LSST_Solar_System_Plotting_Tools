@@ -173,9 +173,6 @@ def objects_in_field(
         if end_time:
             conditions.append(diasource.c['midpointtai'] <= end_time)
 
-        if projection:
-            projection = projection.lower()
-
 
         conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
 
@@ -186,8 +183,6 @@ def objects_in_field(
         df = db.query(
                  stmt
         )
-
-
 
         if df.empty:
             return empty_response(
@@ -201,7 +196,7 @@ def objects_in_field(
         projection = projection.lower()
     
     if filters:
-        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz" , projection = projection, library = library)
+        lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz" , projection = projection, library = library, cache_data = cache_data)
     
         if projection == "3d":
                 lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black") ## add sun and earth?
@@ -229,7 +224,7 @@ def objects_in_field(
                     
     else:
         if projection == '2d':
-            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", library = library)
+            lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data)
             lc.ax.scatter(x = [0], y = [0], c = "black")
             lc.ax.set_xlabel("X (au)")
             lc.ax.set_ylabel("Y (au)")    
