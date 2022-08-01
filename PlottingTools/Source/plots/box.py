@@ -21,7 +21,6 @@ class BoxPlot(Plot):
         if not y:
             self.plot = self.ax.boxplot(x = data[self.x], labels=[''], vert=False, patch_artist = True)
              
-                
         elif not x:
             self.plot = self.ax.boxplot(x = data[self.y], vert=True, patch_artist=True, labels=[''])
                    
@@ -30,13 +29,13 @@ class BoxPlot(Plot):
             
             if library == "seaborn":
                 self.plot = sns.boxplot(data = data, x = self.x, y = self.y, ax = self.ax)
-                #self.plot.set(xlabel = None, ylabel = None)
-                
+                self.plot.set(xlabel = xlabel, ylabel = ylabel)
+                self.ax.set_xlabel(None) # needs fixed
+                self.ax.set_ylabel(None)
             else: 
                 self.plot = self.ax.boxplot(x = data, vert=False, patch_artist=True)
             
             
-    
 class BoxenPlot(Plot):
     def __init__(self, data, x = None, y = None, xlabel: str = "" , ylabel : str = "", title: str = "", rc_params : dict = {}, ax = None, library : Optional[str] = "seaborn", cache_data: Optional[bool] = False):
         super().__init__(data, xlabel, ylabel, title, library, cache_data)

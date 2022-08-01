@@ -1,6 +1,7 @@
 from .plot import Plot
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from typing import Optional, Literal
 
@@ -10,13 +11,13 @@ LIBRARIES = ['matplotlib', 'seaborn']
 class ScatterPlot(Plot):
     """Helper object for creating plots"""
     
-    def __init__(self, data, x, y, z : Optional[str] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], projection: Optional[Literal['2d', '3d']] = '2d', library : Optional[str] = 'seaborn', cache_data: Optional[bool] = False): # rc_params : dict = {}
+    def __init__(self, data, x, y, z : Optional[str] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], projection: Optional[Literal['2d', '3d']] = '2d', library : Optional[str] = 'seaborn', cache_data: Optional[bool] = False, data_copy : Optional[pd.DataFrame] = None): # rc_params : dict = {}
         """
             :param data
             :param: x, value to be plotted on x scale
         """
         
-        super().__init__(data, xlabel, ylabel, title, library, cache_data) #rc_params
+        super().__init__(data, xlabel, ylabel, title, library, cache_data, data_copy) #rc_params
         
         if library not in LIBRARIES:
             raise Exception(f"{library} is not a valid option for library. Valid options include {LIBRARIES}")

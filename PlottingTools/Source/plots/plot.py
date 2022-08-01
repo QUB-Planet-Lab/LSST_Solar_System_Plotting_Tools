@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.offsetbox import AnchoredText
 
+
+import pandas as pd
+
 import pathlib
 from plots.fonts import add_font
 
@@ -11,10 +14,13 @@ import matplotlib.font_manager
 class Plot():
     '''A parent class which all plotting classes inherit from.'''
     
-    def __init__(self, data, xlabel : str = "", ylabel : str = "",  title: str = "", library : Optional[str] = "seaborn", cache_data: Optional[bool] = False):     #rc_params : dict = {}
+    def __init__(self, data, xlabel : str = "", ylabel : str = "",  title: str = "", library : Optional[str] = "seaborn", cache_data: Optional[bool] = False, data_copy : Optional[pd.DataFrame] = None):     #rc_params : dict = {}
         
         if cache_data:
-            self.data = data
+            if data_copy is not None:
+                self.data = data_copy
+            else:
+                self.data = data
         else:
             self.data = None
             
@@ -27,10 +33,10 @@ class Plot():
         else:
             self.context = None
         '''    
-        add_font()
+        #add_font()
         
     
-        plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
+        #plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
         self.fig, self.ax = plt.subplots()
             
            
