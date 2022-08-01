@@ -352,7 +352,6 @@ class Object():
             start_time = start_time,
             end_time = end_time,
             title = title,
-            time_format = time_format,
             projection = projection,
             library = library,
             cache_data = cache_data,
