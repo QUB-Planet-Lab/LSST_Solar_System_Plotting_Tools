@@ -1,7 +1,7 @@
 from plots.box import BoxPlot, BoxenPlot
 from plots.violin import ViolinPlot
 from plots.scatter import ScatterPlot
-from plots.histogram import HistogramPlot
+from plots.histogram import HistogramPlot, HexagonalPlot, Histogram2D
 from plots.symbols import DEGREE
 from plots.styles.filter_color_scheme import COLOR_SCHEME
 
@@ -54,7 +54,6 @@ def _tisserand_relations(
         if end_time:
             conditions.append(diasource.c['midpointtai'] <= end_time)
 
-
         conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
 
         if y == "a":
@@ -92,21 +91,15 @@ def _tisserand_relations(
         return ScatterPlot(data = df, x="tisserand", y=y, xlabel="Tisserand parameter", ylabel= ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title)
     
     if plot_type == "2d_hex":
-        hp = HistogramPlot(data = df, x = "tisserand", y = y, projection="2d_hex")
+        hp = HexagonalPlot(data = df, x = "tisserand", y = y, xlabel = "Tisserand parameter",  ylabel = ELEMENTS[y]['label'] + (f" ({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else ''))
         
-        hp.ax.set_title(title if title else "Tisserand relations")
-        hp.ax.set_xlabel("Tisserand parameter")
-        hp.ax.set_ylabel(ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
-        
+        hp.fig.suptitle(title)
         return hp
     
     if plot_type == "2d_hist":
-        hp = HistogramPlot(data = df, x = "tisserand", y = y, projection="2d")
-       
-        hp.ax.set_title(title if title else "Tisserand relations")
-        hp.ax.set_xlabel("Tisserand parameter")
-        hp.ax.set_ylabel(ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
+        hp = Histogram2D(data = df, x = "tisserand", y = y, xlabel = "Tisserand parameter",  ylabel = ELEMENTS[y]['label'] + (f" ({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else ''), marginals = True)
         
+        hp.figure.suptitle(title)       
         return hp
 
 def _orbital_relations(
@@ -170,13 +163,16 @@ def _orbital_relations(
     
     if plot_type == "2d_hex":
         
-        hp = HistogramPlot(data = df, x = x, y = y, projection="2d_hex",  colorbar = colorbar, xlabel = ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '', ylabel =  ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title if title else f"{x} - {y}" )
+        hp = HexagonalPlot(data = df, x = x, y = y, colorbar = colorbar, xlabel = ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '', ylabel =  ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title if title else f"{ELEMENTS[x]['label'] } on {ELEMENTS[y]['label']}")
         
         
         return hp
     
     if plot_type == "2d_hist":
-        hp = HistogramPlot(data = df, x = x, y = y, projection="2d", colorbar = colorbar, xlabel = ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '', ylabel = ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '')
+        hp = Histogram2D(data = df, x = x, y = y, xlabel = None, ylabel = None, marginals = True, title = title)
+        hp.fig.supxlabel(ELEMENTS[x]['label'] + (f" ({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else ''))
+        hp.fig.supylabel(ELEMENTS[y]['label'] + (f" ({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else ''))
+        hp.fig.suptitle(title)
         
         return hp
     

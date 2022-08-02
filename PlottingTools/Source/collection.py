@@ -243,7 +243,7 @@ class Objects():
     ):
         
         return self.orbital_relations(
-            plot_type = "2d_histogram",
+            plot_type = "2d_hist",
             x = x,
             y = y,
             title = title,
@@ -261,8 +261,6 @@ class Objects():
         df = self.check_data(
             ['ssobjectid', 'midpointtai', 'tisserand', y]
         )
-        
-        
         
         tr = _tisserand_relations(
             df = df[['tisserand', y, 'ssobjectid']],
@@ -286,7 +284,46 @@ class Objects():
         tr.ax.set_ylim(bottom =  tr.data[y].min(), top = tr.data[y].max())
         '''
         return tr
-
+    def tisserand_relations_scatter(
+        self,
+        y : Literal["incl", "q", "e", "a"],
+        title : Optional[str] = None,
+        
+        cache_data: Optional[bool] = False
+    ):
+        return self.tisserand_relations(
+            y = y,
+            plot_type = "scatter",
+            title = title,
+            cache_data = cache_data
+        )
+    
+    def tisserand_relations_hexplot(
+        self,
+        y : Literal["incl", "q", "e", "a"],
+        title : Optional[str] = None,
+        cache_data: Optional[bool] = False
+    ):
+        return self.tisserand_relations(
+            y = y,
+            plot_type = "2d_hex",
+            title = title,
+            cache_data = cache_data
+        )
+        
+    def tisserand_relations_histogram(
+        self,
+        y : Literal["incl", "q", "e", "a"],
+        title : Optional[str] = None,
+        cache_data: Optional[bool] = False
+    ):
+        return self.tisserand_relations(
+            y = y,
+            plot_type = "2d_hist",
+            title = title,
+            cache_data = cache_data
+        )
+        
     def orbital_param_distribution(self,
                                     parameter : Literal["e", "a", "incl", "q"],
                                     filters: Optional[list] = None,
