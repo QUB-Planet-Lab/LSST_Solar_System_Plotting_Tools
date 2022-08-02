@@ -28,13 +28,13 @@ def validate_filters(filters : list):
             raise Exception(f"{_filter} is not a valid filter. Please specifiy a list that may include the following: {FILTERS}")
     return filters
 
-def validate_perihelion(min_peri: float, max_peri: float):
-    if (min_peri and (type(min_peri) != float or min_peri < 0)) or (max_peri and (type(min_peri) != float or max_peri < 0)):
-        raise Exception(f"""Perihelion distances specified by min_peri and max_peri must assume positive float values or None.
+def validate_perihelion(min_q: float, max_q: float):
+    if (min_q and (min_q < 0)) or (max_q and ( max_q < 0)):
+        raise Exception(f"""Perihelion distances specified by min_q and max_peri must assume positive float values or None.
         
-        Input specified: min_peri = {min_peri}, max_peri = {max_peri}""")
+        Input specified: min_q= {min_q}, max_peri = {max_q}""")
         
-    return min_peri, max_peri
+    return min_q, max_q
 
 def validate_inclination(min_incl: float = None, max_incl:float = None):
     if (min_incl and min_incl < 0) or (max_incl and max_incl  < 0):
@@ -72,10 +72,10 @@ def validate_orbital_elements(**kwargs):
         min_incl = kwargs['min_incl'] if 'min_incl' in kwargs else None, 
         max_incl = kwargs['max_incl'] if 'max_incl' in kwargs else None
     )
-    min_peri, max_peri = validate_perihelion(
-        min_peri = kwargs['min_q'] if 'min_peri' in kwargs else None,
-        max_peri = kwargs['max_q'] if 'max_peri' in kwargs else None
+    min_q, max_q = validate_perihelion(
+        min_q = kwargs['min_q'] if 'min_q' in kwargs else None,
+        max_q = kwargs['max_q'] if 'max_q' in kwargs else None
     )
     min_e, max_e = kwargs['min_e'] if 'min_e' in kwargs else None, kwargs['max_e'] if 'max_e' in kwargs else None
     
-    return min_a, max_a, min_incl, max_incl, min_peri, max_peri, min_e, max_e
+    return min_a, max_a, min_incl, max_incl, min_q, max_q, min_e, max_e
