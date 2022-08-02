@@ -106,8 +106,8 @@ class Detections():
 
         if df.empty:
             return empty_response(
-                start_time = start_time,
-                end_time = end_time,
+                start_time = self.start_time,
+                end_time = self.end_time,
                 filters = filters,
                 #**orbital_elements
             )
@@ -229,10 +229,8 @@ class Detections():
 
         if df.empty:
             return empty_response(
-                start_time = start_time,
-                end_time = end_time,
-                filters = filters,
-                #**orbital_elements
+                start_time = self.start_time,
+                end_time = self.end_time,
             )
 
 
@@ -303,10 +301,8 @@ class Detections():
 
         if df.empty:
             return empty_response(
-                start_time = start_time,
-                end_time = end_time,
-                filters = filters,
-                #**orbital_elements
+                start_time = self.start_time,
+                end_time = self.end_time,
             )
 
 
@@ -319,9 +315,6 @@ class Detections():
 
             lc.ax[0].set_xlim(-(max_hd), max_hd)
             lc.ax[0].set_ylim(-(max_hd), max_hd)
-        #lc.fig.set_figwidth(12)
-        #lc.fig.set_figheight(12)
-
 
         return lc  
         
@@ -504,9 +497,7 @@ class Detections():
         if df.empty:
             return empty_response(
                 start_time = self.start_time,
-                end_time = end_time,
-                filters = filters,
-                #**orbital_elements
+                end_time = self.end_time,
             )
 
 
@@ -791,6 +782,7 @@ class Detections():
         self,
         DistanceMinMax=[[0,2],[2,6],[6,25],[25,100]]
 ):
+        KeepData = False
         interval = int(self.end_time) - int(self.start_time)
 
         dates = np.linspace(0, interval-1, interval)
@@ -798,36 +790,6 @@ class Detections():
 
         ticks = np.ndarray.tolist(np.linspace(0, interval,interval+1))
 
-
-        if interval > 7:
-            OutputDF=pd.DataFrame()
-
-            i=0
-            while i < (interval // 7):
-
-                if filename is not None: 
-                    filename += '-'+str(i+1)
-
-                if KeepData:
-
-                    OutputDF = pd.concat([OutputDF,HelioDistHist(startdate+i*7,day,month,year,title+' Plot #'+str(i+1), filename+' Plot #'+str(i+1),7,
-                              KeepData,ShowPlot,DistanceMinMax,LogY)])
-                else:
-                    HelioDistHist(startdate+i*7,day,month,year,title+' Plot #'+str(i+1), filename+' Plot #'+str(i+1),7,
-                              KeepData,ShowPlot,DistanceMinMax,LogY)
-                ## i is incremented each time in the while loop
-                i+=1
-
-            if (interval % 7) !=0:
-                OutputDF = pd.concat([OutputDF,HelioDistHist(startdate+i*7,day,month,year,title+' Plot #'+str(i+1), filename+' Plot #'+str(i+1),(interval % 7),
-                          KeepData,ShowPlot,DistanceMinMax,LogY)])
-                if KeepData:
-                    pass
-                else:
-                    HelioDistHist(startdate+i*7,day,month,year,title+' Plot #'+str(i+1), filename+' Plot #'+str(i+1),(interval % 7),
-                              KeepData,ShowPlot,DistanceMinMax,LogY)
-            if KeepData: return OutputDF
-            else : return
 
         count=0
 
@@ -902,22 +864,21 @@ class Detections():
         #set data
         if timeframe == "daily":
             days = int(et[8:10]) - int(st[8:10])
-            hp.ax = HelioDistHist(start_time = start_time, end_time = end_time, date = start_time, DateInterval = days, DistanceMinMax=[[1.5,2],[2,2.5],[2.5,3],[3,3.5],[3.5,4]],  KeepData = False)
+            hp.ax = HelioDistHist(start_time = start_time, end_time = end_time, date = self.start_time, DateInterval = days, DistanceMinMax=[[1.5,2],[2,2.5],[2.5,3],[3,3.5],[3.5,4]],  KeepData = False)
             
                            
         if timeframe == "monthly":
             # note includes entire month
             months = int(et[5:7]) - int(st[5:7]) + 1
-            hp.plot = MonthlyHelioDistHist(date= start_time,filename='monthly_histogram',DateInterval = months ,KeepData=False,ShowPlot=False,DistanceMinMax=[[30,80], [80, 100]])
+            hp.plot = MonthlyHelioDistHist(date= self.start_time,filename='monthly_histogram',DateInterval = months ,KeepData=False,ShowPlot=False,DistanceMinMax=[[30,80], [80, 100]])
         
         if timeframe == "yearly":
             #note includes entire year
             years = int(et[0:4]) - int(st[0:4]) + 1
             
-            hp.plot = YearlyHelioDistHist(date=start_time, filename='yearly_histogram',DateInterval = years ,KeepData=False,ShowPlot=True,DistanceMinMax=[[30,80], [80, 100]])
+            hp.plot = YearlyHelioDistHist(date=self.start_time, filename='yearly_histogram',DateInterval = years ,KeepData=False,ShowPlot=True,DistanceMinMax=[[30,80], [80, 100]])
 
         hp.ax = hp.plot
-        #hp.fig = hp.plot.figure
 
         return hp
       

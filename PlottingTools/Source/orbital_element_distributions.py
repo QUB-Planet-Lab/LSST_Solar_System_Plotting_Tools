@@ -99,7 +99,7 @@ def _tisserand_relations(
     if plot_type == "2d_hist":
         hp = Histogram2D(data = df, x = "tisserand", y = y, xlabel = "Tisserand parameter",  ylabel = ELEMENTS[y]['label'] + (f" ({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else ''), marginals = True)
         
-        hp.figure.suptitle(title)       
+        hp.fig.suptitle(title)       
         return hp
 
 def _orbital_relations(
