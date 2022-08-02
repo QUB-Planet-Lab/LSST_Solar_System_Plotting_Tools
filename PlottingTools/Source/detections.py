@@ -23,7 +23,8 @@ from plots.styles.filter_symbols import FILTER_SYMBOLS
 from plots.symbols import DEGREE
 
 
-from Barcharts import MonthlyHelioDistHist, YearlyHelioDistHist, Weekly24hrHist 
+from Barcharts import MonthlyHelioDistHist, YearlyHelioDistHist, Weekly24hrHist, HelioDistHist
+
 from Functions import Queries, DateorMJD
 
 import warnings
@@ -568,9 +569,7 @@ class Detections():
         if df.empty:
             return empty_response(
                 start_time = self.start_time,
-                end_time = self.end_time,
-                filters = filters,
-                #**orbital_elements
+                end_time = self.end_time
             )
 
 
@@ -864,19 +863,19 @@ class Detections():
         #set data
         if timeframe == "daily":
             days = int(et[8:10]) - int(st[8:10])
-            hp.ax = HelioDistHist(start_time = start_time, end_time = end_time, date = self.start_time, DateInterval = days, DistanceMinMax=[[1.5,2],[2,2.5],[2.5,3],[3,3.5],[3.5,4]],  KeepData = False)
+            hp.ax = HelioDistHist(start_time = start_time, end_time = end_time, date = start_time, DateInterval = days, DistanceMinMax=[[1.5,2],[2,2.5],[2.5,3],[3,3.5],[3.5,4]],  KeepData = False)
             
                            
         if timeframe == "monthly":
             # note includes entire month
             months = int(et[5:7]) - int(st[5:7]) + 1
-            hp.plot = MonthlyHelioDistHist(date= self.start_time,filename='monthly_histogram',DateInterval = months ,KeepData=False,ShowPlot=False,DistanceMinMax=[[30,80], [80, 100]])
+            hp.plot = MonthlyHelioDistHist(date= start_time,filename='monthly_histogram',DateInterval = months ,KeepData=False,ShowPlot=False,DistanceMinMax=[[30,80], [80, 100]])
         
         if timeframe == "yearly":
             #note includes entire year
             years = int(et[0:4]) - int(st[0:4]) + 1
             
-            hp.plot = YearlyHelioDistHist(date=self.start_time, filename='yearly_histogram',DateInterval = years ,KeepData=False,ShowPlot=True,DistanceMinMax=[[30,80], [80, 100]])
+            hp.plot = YearlyHelioDistHist(date=start_time, filename='yearly_histogram',DateInterval = years ,KeepData=False,ShowPlot=True,DistanceMinMax=[[30,80], [80, 100]])
 
         hp.ax = hp.plot
 
