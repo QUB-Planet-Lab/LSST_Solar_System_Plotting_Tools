@@ -235,7 +235,7 @@ class Detections():
             )
 
 
-        lc = Histogram2D(data = df, x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data, projection="2d", xlabel = "Heliocentric X (au)", ylabel = "Heliocentric Y (au)", marginals = marginals )
+        lc = Histogram2D(data = df, x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data, xlabel = "Heliocentric X (au)", ylabel = "Heliocentric Y (au)", marginals = marginals )
         #lc.ax.scatter(x = [0], y = [0], c = "black")
 
         if marginals:
@@ -307,7 +307,7 @@ class Detections():
             )
 
 
-        lc = HexagonalPlot(data = df, x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data, projection="2d", xlabel = "Heliocentric X (au)", ylabel = "Heliocentric Y (au)")
+        lc = HexagonalPlot(data = df, x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data, xlabel = "Heliocentric X (au)", ylabel = "Heliocentric Y (au)")
         #lc.ax.scatter(x = [0], y = [0], c = "black")
 
         if marginals:
