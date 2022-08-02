@@ -27,7 +27,7 @@ def create_orbit_conditions(conditions : list = [], **orbital_elements):
         if min_e:
             conditions.append(mpcorb.c['e'] >= min_e )
         if max_e:
-            conditions.append(mpcorb.c['e'] <= min_e )
+            conditions.append(mpcorb.c['e'] <= max_e )
                 
     if min_a:
         conditions.append((mpcorb.c['q'] / (1 - mpcorb.c['e']) ) >= min_a)
