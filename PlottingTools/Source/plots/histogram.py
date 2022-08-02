@@ -11,7 +11,7 @@ LIBRARIES = ['matplotlib', 'seaborn']
 
 
 class HexagonalPlot(Plot):
-    def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection : Literal['1d', '2d', '2d_hex'] = '1d', colorbar : bool = True, library = 'seaborn', cache_data: Optional[bool] = False):
+    def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", colorbar : bool = True, library = 'seaborn', cache_data: Optional[bool] = False):
             super().__init__(data, xlabel, ylabel, title, library, cache_data)
             
             
@@ -24,18 +24,22 @@ class HexagonalPlot(Plot):
             self.plot.ax_joint.set(xlabel = xlabel, ylabel = ylabel)
             
             self.fig = self.plot.figure
+            self.fig.suptitle(title)
+
+                
             self.ax = [self.plot.ax_joint, self.plot.ax_marg_x, self.plot.ax_marg_y]
             '''
             if colorbar:
-                norm = plt.Normalize(data[y].min(), data[y].max())
+                cbar_ax = self.fig.add_axes([1, .25, .025, .4])  # x, y, width, height
+                norm = plt.Normalize(self.plot.figure.get_array().min(), self.plot.get_array().max())
                 sm = plt.cm.ScalarMappable(cmap="Blues", norm=norm)
                 sm.set_array([])
 
-                self.plot.figure.colorbar(mappable = sm, shrink = 0.5)
+                self.plot.figure.colorbar(cax=cbar_ax, mappable = sm, shrink = 0.5)
            '''
             
 class Histogram2D(Plot):
-      def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", yerr = [], xerr = [], rc_params : dict = {}, projection : Literal['1d', '2d', '2d_hex'] = '1d', colorbar : bool = True, library = 'seaborn', cache_data: Optional[bool] = False, marginals : Optional[bool] = False, hex_plot: Optional[bool] = False):
+      def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", colorbar : bool = True, library = 'seaborn', cache_data: Optional[bool] = False, marginals : Optional[bool] = False, hex_plot: Optional[bool] = False):
             super().__init__(data, xlabel, ylabel, title, library, cache_data)
 
             self.fig.clear()
@@ -43,6 +47,10 @@ class Histogram2D(Plot):
             if not marginals:
                 self.plot = sns.histplot(data = data, x= x, y = y, cbar = colorbar)
                 self.plot.set(xlabel = xlabel, ylabel = ylabel)
+                self.fig = self.plot.figure
+                
+                self.fig.suptitle(title)
+
             
             else:
                 sns.set_theme(style="ticks")
@@ -64,6 +72,8 @@ class Histogram2D(Plot):
                 self.plot.plot_marginals(sns.histplot, color="#03012d")
                 self.fig = self.plot.figure
                 self.ax = [self.plot.ax_joint, self.plot.ax_marg_x, self.plot.ax_marg_y]
+                
+                self.fig.suptitle(title)
     
     
 class HistogramPlot(Plot):
