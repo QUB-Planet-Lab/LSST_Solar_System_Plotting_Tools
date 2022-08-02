@@ -335,7 +335,7 @@ def eccentricity(
         if filters:
             filters = validate_filters(list(set(filters)))
             conditions.append(diasource.c['filter'].in_(filters))
-
+        
         conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
         
         stmt = select(
@@ -394,6 +394,7 @@ def perihelion(
 
         conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
         
+        
         stmt = select( distinct(mpcorb.c['ssobjectid']).label("ssobjectid") if distinct else mpcorb.c['ssobjectid'], mpcorb.c['q'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
             
@@ -449,7 +450,6 @@ def inclination(
 
         conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
                 
-            
         stmt =  select(mpcorb.c['incl'], diasource.c['filter'], distinct(mpcorb.c['ssobjectid']).label("ssobjectid") if distinct else mpcorb.c['ssobjectid']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
         
@@ -512,7 +512,7 @@ def semi_major_axis(
         else:
             cols.append(mpcorb.c['ssobjectid'])
                         
-                        
+                
         stmt = select(distinct(mpcorb.c['ssobjectid']).label('ssobjectid') if distinct else mpcorb.c['ssobjectid'],mpcorb.c['q'], (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a') , diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
         
