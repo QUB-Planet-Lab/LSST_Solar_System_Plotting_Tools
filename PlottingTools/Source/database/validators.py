@@ -22,11 +22,11 @@ def validate_filters(filters : list):
     if type(filters) != list:
         if filters == "all" or filters == "ALL" or filters == "*":
             return ["g", "r", "i", "z", "y", "u"]
-        
         elif filters == "unfiltered" or filters == "UNFILTERED" or filters == "Unfiltered":
             return None
         else:
-            raise Exception(f"{_filter} is not a valid filter. Please specifiy a list that may include the following: {FILTERS}")
+            raise Exception(f"Please specifiy a list that may include the following: {FILTERS}, or 'all'")
+            
     filters = list(set(filters))
     
     for _filter in filters:
