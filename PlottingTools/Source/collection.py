@@ -15,14 +15,19 @@ from typing import Optional, Literal
 
 from sqlalchemy import select, func, distinct, column
 
+
+import warnings
+
 PLOT_TYPES = ['BOX', 'BOXEN', 'VIOLIN']
 ORB_PARAMS = ["eccentricity", "perihelion", "semi_major_axis", "inclination"]
 
 
-
-
 class Objects():
-    def __init__(self, start_time , end_time, lazy_loading: Optional[bool] = True,  **orbital_elements):
+    def __init__(self, start_time, 
+                 end_time, 
+                 filters: Optional[list] = None,
+                 lazy_loading: Optional[bool] = True,  
+                 **orbital_elements):
 
         self.lazy_loading = lazy_loading
         
@@ -42,8 +47,10 @@ class Objects():
         
         self.conditions = create_orbit_conditions(conditions = self.conditions, **orbital_elements)
         
+                
         a_J = 5.2038 # au
-    
+        
+        
         tisserand = (a_J / (mpcorb.c['q'] / (1 - mpcorb.c['e'])) + 2 * func.cos(mpcorb.c['incl']) * func.sqrt((mpcorb.c['q'] / (1 - mpcorb.c['e'])) / a_J * (1 - func.power(mpcorb.c['e'], 2)))).label("tisserand")
 
         self.cols = [
@@ -79,12 +86,34 @@ class Objects():
             'tisserand' : tisserand
         }
         
-
+        if filters:
+            self.filters = validate_filters(filters)
+        else:
+            self.filters = None
+        
         if lazy_loading == False:
             self.data = self.get_data(list(self.table_columns.keys()))
         else:
             self.data = None
             
+    def filter_conditions(self, filters, conditions):
+                
+        if filters:
+            filters = validate_filters(filters)
+
+            if self.filters and self.filters != filters:
+                msg = f"Filters have already been specified when Detections was initialised. Initialised filters included: {self.filters}. Overiding filters for this query to include the specified most recent input: {filters}."
+                warnings.warn(msg)
+            if filters:        
+                conditions.append(diasource.c['filter'].in_(filters))
+       
+        else:
+            if self.filters:
+                filcters = self.filters # for internal use in the function
+                conditions.append(diasource.c['filter'].in_(self.filters))
+                
+        return filters, conditions
+    
     def get_data(self, cols):
         # THIS DISTINCT WORKS
         
@@ -95,8 +124,8 @@ class Objects():
                         diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
                     ).join(
                         sssource, sssource.c['ssobjectid'] == mpcorb.c['ssobjectid']
-                    ).distinct(mpcorb.c['ssobjectid']).where(*self.conditions)
-                )
+                    ).distinct(mpcorb.c['ssobjectid'], diasource.c['filter']).where(*self.conditions)
+                ) # check veracity
         
         if self.data is None:
             self.data = df
@@ -134,7 +163,6 @@ class Objects():
     def plot_objects(self,
                     filters: Optional[list] = None,
                     title : Optional[str] = None,
-                     
                     time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
                     projection: Optional[Literal['2d', '3d']] = '2d',
                     library: Optional[str] =  "seaborn",
@@ -144,7 +172,10 @@ class Objects():
         df = self.check_data(
             ['ssobjectid', 'filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid', 'midpointtai']
         )
-     
+        
+        
+        filters, _ = self.filter_conditions(filters, [])
+        
            
         return objects_in_field(
             df[['filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid']],
@@ -353,6 +384,7 @@ class Objects():
             required_cols
         )
         
+        filters, self.conditions = self.filter_conditions(filters = filters, conditions = self.conditions)
 
         args = dict(
             filters = filters,
@@ -402,6 +434,8 @@ class Objects():
         library: Optional[str] = "seaborn",
         cache_data: Optional[bool] = False
     ):
+        
+
         return self.orbital_param_distribution(
             parameter = "e",
             filters = filters,
@@ -419,6 +453,9 @@ class Objects():
         library: Optional[str] = "seaborn",
         cache_data: Optional[bool] = False
     ):
+        
+       
+
         return self.orbital_param_distribution(
             parameter = "a",
             filters = filters,
@@ -435,6 +472,10 @@ class Objects():
         library: Optional[str] = "seaborn",
         cache_data: Optional[bool] = False
     ):
+        
+        
+
+            
         return self.orbital_param_distribution(
             parameter = "q",
             filters = filters,
@@ -452,6 +493,10 @@ class Objects():
         library: Optional[str] = "seaborn",
         cache_data: Optional[bool] = False
     ):
+        
+        filters, self.conditions = self.filter_conditions(filters = filters, conditions = self.conditions)
+
+            
         return self.orbital_param_distribution(
             parameter = "incl",
             filters = filters,
@@ -470,6 +515,8 @@ class Objects():
         cache_data: Optional[bool] = False
     ):
         plots = []
+        
+        
         for element in ["a", "q", "incl", "e"]:
             plots.append(
                 self.orbital_param_distribution(

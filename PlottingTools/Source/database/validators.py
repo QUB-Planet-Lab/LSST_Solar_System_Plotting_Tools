@@ -2,9 +2,7 @@ from .format_time import format_times
 
 
 FILTERS = ["g", "r", "i", "z", "y", "u"]
-def validate_times(start_time = None, end_time = None):
-
-    
+def validate_times(start_time = None, end_time = None):    
     if start_time:
         start_time = format_times(times = [start_time], _format="MJD")[0]
     if end_time:
@@ -22,10 +20,17 @@ def validate_filter(_filter: str):
 
 def validate_filters(filters : list):
     if type(filters) != list:
-        raise TypeError(f"Please specifiy a list that may include the following: {FILTERS}")
-    for _filter in filters:
-        if _filter not in FILTERS:
+        if filters == "all" or filters == "ALL" or filters == "*":
+            return ["g", "r", "i", "z", "y", "u"]
+        
+        elif filters == "unfiltered" or filters == "UNFILTERED" or filters == "Unfiltered":
+            return None
+        else:
             raise Exception(f"{_filter} is not a valid filter. Please specifiy a list that may include the following: {FILTERS}")
+    filters = list(set(filters))
+    
+    for _filter in filters:
+        validate_filter(_filter)
     return filters
 
 def validate_perihelion(min_q: float, max_q: float):

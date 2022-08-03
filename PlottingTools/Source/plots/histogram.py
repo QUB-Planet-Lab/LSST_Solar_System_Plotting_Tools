@@ -19,15 +19,25 @@ class HexagonalPlot(Plot):
             
             sns.set_theme(style="ticks")
 
-            self.plot = sns.jointplot(data = data, x = x , y = y, marginal_ticks=True, kind="hex")
+            self.plot = sns.jointplot(data = data, x = x , y = y, marginal_ticks=True, kind="hex", color = "blue")
             
             self.plot.ax_joint.set(xlabel = xlabel, ylabel = ylabel)
             
+            
+            
             self.fig = self.plot.figure
             self.fig.suptitle(title)
-
+            
                 
             self.ax = [self.plot.ax_joint, self.plot.ax_marg_x, self.plot.ax_marg_y]
+            
+            
+            
+            cbar_ax = self.plot.fig.add_axes([1, .25, .04, .5])
+            
+            #self.plot.fig.colorbar(cax = cbar_ax, ax = self.ax[0])
+            plt.colorbar(cax=cbar_ax)
+
             '''
             if colorbar:
                 cbar_ax = self.fig.add_axes([1, .25, .025, .4])  # x, y, width, height
@@ -56,13 +66,16 @@ class Histogram2D(Plot):
                 sns.set_theme(style="ticks")
 
                 self.plot = sns.JointGrid(data = data, x = x , y = y, marginal_ticks=True)
-                self.plot.ax_joint.set(xlabel = xlabel, ylabel = ylabel)
-
+                #self.plot.set_axis_labels(xlabel = xlabel, ylabel = ylabel)
+                
+                self.plot.ax_joint.set_xlabel(xlabel)
+                self.plot.ax_joint.set_ylabel(ylabel)
+                
                 # Set a log scaling on the y axis
                 #g.ax_joint.set(yscale="log")
 
                 # Create an inset legend for the histogram colorbar
-                cax = self.plot.figure.add_axes([.15, .55, .02, .2])
+                cax = self.plot.figure.add_axes([1, .25, .04, .5])
 
                 # Add the joint and marginal histogram plots
                 self.plot.plot_joint(

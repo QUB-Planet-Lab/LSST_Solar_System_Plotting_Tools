@@ -158,22 +158,37 @@ def _orbital_relations(
     if plot_type not in ["scatter", "2d_hist", "2d_hex"]:
         raise Exception("Plot type must be scatter, 2d_hist, 2d_hex")
     
+    xlabel = ELEMENTS[x]['label']
+    if ELEMENTS[x]['unit']:
+        xlabel += f" ({ELEMENTS[x]['unit']})"
+        
+    ylabel = ELEMENTS[y]['label']
+    if ELEMENTS[y]['unit']:
+        ylabel += f" ({ELEMENTS[y]['unit']})"
+    
+    print(xlabel, ylabel)
+    
     if plot_type == "scatter":
-        return ScatterPlot(data = df, x=x, y=y, xlabel = ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '', ylabel =  ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title if title else f"{x} - {y}" )
+        return ScatterPlot(data = df, x=x, y=y, xlabel = xlabel, ylabel =  ylabel, title = title if title else "")
     
     if plot_type == "2d_hex":
         
-        hp = HexagonalPlot(data = df, x = x, y = y, colorbar = colorbar, xlabel = ELEMENTS[x]['label'] + f"({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else '', ylabel =  ELEMENTS[y]['label'] + f"({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else '', title = title if title else f"{ELEMENTS[x]['label'] } on {ELEMENTS[y]['label']}")
+        hp = HexagonalPlot(data = df, x = x, y = y, colorbar = colorbar, xlabel = xlabel, ylabel =  ylabel, title = title if title else "")
         
         
         return hp
     
     if plot_type == "2d_hist":
-        hp = Histogram2D(data = df, x = x, y = y, xlabel = None, ylabel = None, marginals = True, title = title)
-        hp.fig.supxlabel(ELEMENTS[x]['label'] + (f" ({ELEMENTS[x]['unit']})" if ELEMENTS[y]['unit'] else ''))
-        hp.fig.supylabel(ELEMENTS[y]['label'] + (f" ({ELEMENTS[y]['unit']})" if ELEMENTS[y]['unit'] else ''))
-        hp.fig.suptitle(title)
         
+        hp = Histogram2D(data = df,
+                         x = x,
+                         y = y,
+                         xlabel = xlabel, 
+                         ylabel = ylabel, 
+                         marginals = True, 
+                         title = title
+                        )
+
         return hp
     
 def base(
