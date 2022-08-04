@@ -18,6 +18,13 @@ from sqlalchemy import select, func, distinct, column
 
 import warnings
 
+from matplotlib import patches
+import pandas as pd
+
+from plots import ScatterPlot, HexagonalPlot, Histogram2D
+from plots.styles.filter_color_scheme import COLOR_SCHEME
+from plots.styles.filter_symbols import FILTER_SYMBOLS
+
 PLOT_TYPES = ['BOX', 'BOXEN', 'VIOLIN']
 ORB_PARAMS = ["eccentricity", "perihelion", "semi_major_axis", "inclination"]
 
@@ -77,6 +84,10 @@ class Objects():
             'heliocentricx': sssource.c['heliocentricx'],
             'heliocentricy': sssource.c['heliocentricy'],
             'heliocentricz' : sssource.c['heliocentricz'],
+            
+            'topocentricx': sssource.c['topocentricx'],
+            'topocentricy': sssource.c['topocentricy'],
+            'topocentricz' : sssource.c['topocentricz'],
 
             'q' : mpcorb.c['q'],
             'e' : mpcorb.c['e'],
@@ -109,7 +120,7 @@ class Objects():
        
         else:
             if self.filters:
-                filcters = self.filters # for internal use in the function
+                filters = self.filters # for internal use in the function
                 conditions.append(diasource.c['filter'].in_(self.filters))
                 
         return filters, conditions
@@ -160,42 +171,485 @@ class Objects():
         return df
     
     
-    def plot_objects(self,
-                    filters: Optional[list] = None,
-                    title : Optional[str] = None,
-                    time_format: Optional[Literal['ISO', 'MJD']] = 'ISO',
-                    projection: Optional[Literal['2d', '3d']] = '2d',
-                    library: Optional[str] =  "seaborn",
-                    cache_data: Optional[bool] = False
-                    ): 
+    
+    @staticmethod
+    def add_planets(ax, xlim):
+        planets = {
+            0.387 : 'mercury',
+            0.723 : 'venus',
+            1 : 'earth',
+            1.524: 'mars',
+            5.203 : 'jupiter',
+            9.540 : 'saturn',
+            19.18 : 'uranus',
+            30.06 : 'neptune'
+        }
+        
+        for dist in planets.keys():
+            if dist < xlim:
+                ax.add_patch(patches.Circle((0,0), radius = dist, fill = False, edgecolor="black"))
+    
+    def heliocentric_view(
+        self,
+        
+        filters: Optional[list] = None,
+        title : Optional[str] = None,
+        projection: Optional[Literal['2d', '3d']] = '2d',
+        
+        library: Optional[str] =  "seaborn",
+        cache_data: Optional[bool] = False,
+        add_planets: Optional[bool] = False
+    ):
         
         df = self.check_data(
             ['ssobjectid', 'filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid', 'midpointtai']
         )
         
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
         
-        filters, _ = self.filter_conditions(filters, [])
+        
+        # validate min_hd, max_hd
+        
+        #conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        if projection:
+            projection = projection.lower()
+            
+            if filters:
+                lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz" , projection = projection, library = library, cache_data = cache_data, data_copy = df)
+
+                if projection == "3d":
+                        lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black") ## add sun and earth?
+                else:
+                        lc.ax.scatter(x = [0], y = [0], c = "black") ## add sun and earth?
+
+                for _filter in filters:
+                    df_filter = df[df['filter'] == _filter]
+
+                    if not df_filter.empty:
+
+                        if projection == "2d":
+                            lc.ax.scatter(x = df_filter['heliocentricx'] , y = df_filter['heliocentricy'], c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
+
+                        elif projection == '3d':
+                            lc.ax.scatter(xs = df_filter['heliocentricx'] , ys = df_filter['heliocentricy'], zs=df_filter['heliocentricz'] ,c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
+                            lc.ax.legend(loc="upper right")
+                lc.ax.legend()
+            else:
+                if projection == '2d':
+                    lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data)
+                    lc.ax.scatter(x = [0], y = [0], c = "black")
+                    
+                elif projection == '3d':
+                    lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", z = "heliocentricz", projection = '3d', library = library, cache_data = cache_data)
+                    lc.ax.scatter(xs = [0], ys = [0], zs=[0] , c = "black")
+                    
+        lc.ax.set_xlabel("Heliocentric X (au)")
+        lc.ax.set_ylabel("Heliocentric Y (au)")
+        
+        
+        if projection == "3d":
+            lc.ax.set_zlabel("Heliocentric Z (au)")
+        lc.ax.set_title(title if title else f"")            
+            
+        df_max_x = abs(df['heliocentricx'].max()) 
+        df_min_x = abs(df['heliocentricx'].min())
+
+        df_max_y = abs(df['heliocentricy'].max()) 
+        df_min_y = abs(df['heliocentricy'].min())
+
+        df_max = df_max_x if df_max_x >= df_max_y else df_max_y
+        df_min = df_min_x if df_min_x >= df_min_y else df_min_y
+            
+            
+        _max = df_max if df_max >= df_min else df_min
+        
+        if add_planets and projection != "3d":
+            self.add_planets(ax = lc.ax, xlim = df_max if df_max >= df_min else df_min)
+        
+        lc.ax.set_xlim(-(_max), _max)
+        lc.ax.set_ylim(-(_max), _max)
+        lc.fig.set_figwidth(7)
+        lc.fig.set_figheight(7)#
+        
+        return lc    
+    
+    def single_heliocentric_plots(
+        self,
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd: Optional[float] = None,
+        max_hd: Optional[float] = None,
+        add_planets: Optional[bool] = False
+
+    ):
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+            
+        plots = []
+
+        for _filter in filters:
+            # silence warnings here
+            plots.append(self.heliocentric_view(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets))
+    
+        return plots
+    
+    def heliocentric_histogram(
+        self,
+        min_hd : float = None,
+        max_hd : float = None,
+        filters: Optional[list] = None,
+        title : Optional[str] = None,
+        marginals: Optional[bool] = True,
+        library: Optional[str] =  "seaborn",
+        cache_data: Optional[bool] = False,
+        add_planets: Optional[bool] = False
+    ):
+
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+              
+        df = self.check_data(
+            ['ssobjectid', 'filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid', 'midpointtai']
+        )
+
+        lc = Histogram2D(data = df[df['filter'].isin(filters)], x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data, xlabel = "Heliocentric X (au)", ylabel = "Heliocentric Y (au)", marginals = marginals)
+        
+        #lc.ax.scatter(x = [0], y = [0], c = "black")
+
+        if marginals:
+            
+            #lc.ax.set_title(title if title else f"")            
+
+            lc.ax[0].set_xlim(-(max_hd), max_hd)
+            lc.ax[0].set_ylim(-(max_hd), max_hd)
+            
+        #lc.fig.set_figwidth(12)
+        #lc.fig.set_figheight(12)
+        
+        if add_planets:
+            df_max_x = abs(df['heliocentricx'].max()) 
+            df_min_x = abs(df['heliocentricx'].min())
+            
+            df_max_y = abs(df['heliocentricy'].max()) 
+            df_min_y = abs(df['heliocentricy'].min())
+            
+            df_max = df_max_x if df_max_x >= df_max_y else df_max_y
+            df_min = df_min_x if df_min_x >= df_min_y else df_min_y
+            
+            ax = lc.ax[0] if marginals else lc.ax
+            
+            self.add_planets(ax = ax, xlim = df_max if df_max >= df_min else df_min)
+        
+            
+        return lc   
+
+    def single_heliocentric_histogram(
+        self,
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd: Optional[float] = None,
+        max_hd: Optional[float] = None,
+        add_planets: Optional[bool] = False
+
+    ):
+        
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+            
+        plots = []
+
+        for _filter in filters:
+            plots.append(self.heliocentric_histogram(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets))
+    
+        return plots
+        
+        
+    def heliocentric_hexplot(
+        self,    
+        min_hd : float, # required
+        max_hd : float,
+        filters: Optional[list] = None,
+        title : Optional[str] = None,
+        marginals: Optional[bool] = True,
+        library: Optional[str] =  "seaborn",
+        cache_data: Optional[bool] = False,
+        add_planets: Optional[bool] = False
+        
+    ):
+        # validate min_hd, max_hd
+        
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+      
+        #conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        df = self.check_data(
+            ['ssobjectid', 'filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid', 'midpointtai']
+        )
+        
+
+        lc = HexagonalPlot(data = df[df['filter'].isin(filters)], x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data, xlabel = "Heliocentric X (au)", ylabel = "Heliocentric Y (au)")
+        #lc.ax.scatter(x = [0], y = [0], c = "black")
+
+        
+        df_max_x = abs(df['heliocentricx'].max()) 
+        df_min_x = abs(df['heliocentricx'].min())
+
+        df_max_y = abs(df['heliocentricy'].max()) 
+        df_min_y = abs(df['heliocentricy'].min())
+
+        df_max = df_max_x if df_max_x >= df_max_y else df_max_y
+        df_min = df_min_x if df_min_x >= df_min_y else df_min_y
+            
+            
+        _max = df_max if df_max >= df_min else df_min
+        
+        if add_planets:
+            self.add_planets(ax = lc.ax[0], xlim = df_max if df_max >= df_min else df_min)
+        
+        lc.ax[0].set_xlim(-(max_hd), max_hd)
+        lc.ax[0].set_ylim(-(max_hd), max_hd)
+        lc.fig.set_figwidth(7)
+        lc.fig.set_figheight(7)#
+        
+        return lc  
+        
+    
+    def single_heliocentric_hexplot(
+        self,
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd: Optional[float] = None,
+        max_hd: Optional[float] = None,
+        add_planets: Optional[bool] = False
+
+    ):
+        
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+            
+        plots = []
+
+        for _filter in filters:
+            plots.append(self.heliocentric_hexplot(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+        
+        return plots
+    
+    def topocentric_view(
+        self,
+        min_hd : float = None,
+        max_hd : float = None,
+        
+        filters: Optional[list] = None,
+        title : Optional[str] = None,
+        projection: Optional[Literal['2d', '3d']] = '2d',
+        
+        library: Optional[str] =  "seaborn",
+        cache_data: Optional[bool] = False,
+        add_planets : Optional[bool] = False
+        
+    ):
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+      
+        #conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        df = self.check_data(
+            ['ssobjectid', 'filter', 'topocentricx', 'topocentricy', 'topocentricz', 'ssobjectid', 'midpointtai']
+        )
+        
+        # validate min_hd, max_hd
+        
+        if projection:
+            projection = projection.lower()
+            
+            if filters:
+                lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="topocentricx", y = "topocentricy", z="heliocentricz" , projection = projection, library = library, cache_data = cache_data, data_copy = df)
+
+                if projection == "3d":
+                        lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black") ## add sun and earth?
+                else:
+                        lc.ax.scatter(x = [0], y = [0], c = "black") ## add sun and earth?
+
+                for _filter in filters:
+                    df_filter = df[df['filter'] == _filter]
+
+                    if not df_filter.empty:
+
+                        if projection == "2d":
+                            lc.ax.scatter(x = df_filter['topocentricx'] , y = df_filter['topocentricy'], c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
+
+                        elif projection == '3d':
+                            lc.ax.scatter(xs = df_filter['topocentricx'] , ys = df_filter['topocentricy'], zs=df_filter['heliocentricz'] ,c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
+                            lc.ax.legend(loc="upper right")
+                lc.ax.legend()
+            else:
+                if projection == '2d':
+                    lc = ScatterPlot(data = df, x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data)
+                    lc.ax.scatter(x = [0], y = [0], c = "black")
+                    
+
+                elif projection == '3d':
+                    lc = ScatterPlot(data = df, x = "topocentricx", y = "topocentricy", z = "topocentricz", projection = '3d', library = library, cache_data = cache_data)
+                    lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black")
+                    
+                    
+        lc.ax.set_xlabel("Topocentric X (au)")
+        lc.ax.set_ylabel("Topocentric Y (au)")
+        
+        
+        if projection == "3d":
+            lc.ax.set_zlabel("Topocentric Z (au)")
+        lc.ax.set_title(title if title else f"")         
+        
+        if max_hd:
+            lc.ax.set_xlim(-(max_hd), max_hd)
+            lc.ax.set_ylim(-(max_hd), max_hd)
+            lc.fig.set_figwidth(7)
+            lc.fig.set_figheight(7)
+            
+       
+            
+        return lc
+    
+    def single_topocentric_plots(
+        self,
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd : float = None,
+        max_hd : float = None,
+        add_planets : Optional[bool] = False
+    ):
+        
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+        
+        plots = []
+        
+        for _filter in filters:
+            plots.append(self.topocentric_view(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+            
+        return plots
+    
+    def topocentric_histogram(
+        self,
+        #split into multiplot
+        min_hd : float = None,
+        max_hd : float = None,        
+        filters: Optional[list] = None,
+        title : Optional[str] = None,
+        marginals: Optional[bool] = True,
+        library: Optional[str] =  "seaborn",
+        cache_data: Optional[bool] = False,
+        add_planets: Optional[bool] = False
+    ):
+        # validate min_hd, max_hd
+        #start = time.time()
+        
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+      
+        #conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        df = self.check_data(
+            ['ssobjectid', 'filter', 'topocentricx', 'topocentricy', 'topocentricz', 'ssobjectid', 'midpointtai']
+        )
+        
+
+        lc = Histogram2D(data = df[df['filter'].isin(filters)], x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data, xlabel = "Topocentric X (au)", ylabel = "Topocentric Y (au)", marginals = marginals, title = title)
+        #lc.ax.scatter(x = [0], y = [0], c = "black")
+
+        if marginals:
+            
+            #lc.ax.set_title(title if title else f"")            
+
+            lc.ax[0].set_xlim(-(max_hd), max_hd)
+            lc.ax[0].set_ylim(-(max_hd), max_hd)
+        #lc.fig.set_figwidth(12)
+        #lc.fig.set_figheight(12)
+
+        
+        return lc
+    
+    def single_topocentric_histogram(
+        self,
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd : float = None,
+        max_hd : float = None,
+        add_planets : Optional[bool] = False
+
+    ):
         
            
-        return objects_in_field(
-            df[['filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid']],
-            filters = filters,
-            start_time = self.start_time,
-            end_time = self.end_time,
-            title = title,
-            time_format = time_format,
-            projection = projection,
-            library = library,
-            cache_data = cache_data,
-            min_a = self.min_a, 
-            max_a = self.max_a,
-            min_incl = self.min_incl,
-            max_incl = self.max_incl,
-            min_peri = self.min_peri, 
-            max_peri = self.max_peri, 
-            min_e = self.min_e, 
-            max_e = self.max_e
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+        
+        plots = []
+        
+        for _filter in filters:
+            plots.append(self.topocentric_histogram(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+            
+    def topocentric_hexplot(
+        self,
+        #split into multiplot
+        min_hd : float = None,
+        max_hd : float = None,
+        filters: Optional[list] = None,
+        title : Optional[str] = None,
+        marginals: Optional[bool] = True,
+        library: Optional[str] =  "seaborn",
+        cache_data: Optional[bool] = False,
+        add_planets: Optional[bool] = False
+    ):
+        
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+      
+        #conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        df = self.check_data(
+            ['ssobjectid', 'filter', 'heliocentricx', 'heliocentricy', 'heliocentricz', 'ssobjectid', 'midpointtai']
         )
+
+
+        lc = HexagonalPlot(data = df[df['filter'].isin(filters)], x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data, xlabel = "Topocentric X (au)", ylabel = "Topocentric Y (au)", title = title)
+        #lc.ax.scatter(x = [0], y = [0], c = "black")
+        if marginals:
+            
+            #lc.ax.set_title(title if title else f"")            
+
+            lc.ax[0].set_xlim(-(max_hd), max_hd)
+            lc.ax[0].set_ylim(-(max_hd), max_hd)
+            
+          
+        return lc
+
+    def single_topocentric_hexplot(
+        self,
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd : float = None,
+        max_hd : float = None,
+        add_planets : Optional[bool] = False
+    ):
+           
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+        
+        plots = []
+        
+        for _filter in filters:
+            plots.append(self.topocentric_hexplot(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+    
     
     def orbital_relations(
         self,

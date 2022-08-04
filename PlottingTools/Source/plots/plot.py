@@ -14,7 +14,7 @@ import matplotlib.font_manager
 class Plot():
     '''A parent class which all plotting classes inherit from.'''
     
-    def __init__(self, data, xlabel : str = "", ylabel : str = "",  title: str = "", library : Optional[str] = "seaborn", cache_data: Optional[bool] = False, data_copy : Optional[pd.DataFrame] = None):     #rc_params : dict = {}
+    def __init__(self, data, xlabel : str = "", ylabel : str = "",  title: str = "", library : Optional[str] = "seaborn", cache_data: Optional[bool] = False, data_copy : Optional[pd.DataFrame] = None, dimensions : Optional[tuple] = (1,1)):     #rc_params : dict = {}
         
         if cache_data:
             if data_copy is not None:
@@ -37,7 +37,8 @@ class Plot():
         
     
         #plt.style.use(f'{pathlib.Path(__file__).parent.absolute()}/styles/lsst.mplstyle')
-        self.fig, self.ax = plt.subplots()
+        # add dimensions to figure
+        self.fig, self.ax = plt.subplots(*dimensions)
             
            
         self.title = title # Is is necessary to add these to variables?
@@ -83,11 +84,6 @@ class Plot():
                 text_box, prop=dict(size=15), frameon=True, loc='upper right')
             at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
             self.ax.add_artist(at)
-    
-    def replot(**kwargs):
-        for kwarg in kwargs:
-            print(kwarg, kwargs[kwarg])
-            ## add replot function, takes any of the columns from the dataframe and filters them to provide a new plot that maintains the old plot.
     
     def save(self, file_name : str, extension : Literal['png', 'jpeg', 'pdf'] = 'png'):
         #print(self.plot)

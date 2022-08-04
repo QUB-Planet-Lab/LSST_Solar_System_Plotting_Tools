@@ -2,6 +2,7 @@ from .format_time import format_times
 
 
 FILTERS = ["g", "r", "i", "z", "y", "u"]
+
 def validate_times(start_time = None, end_time = None):    
     if start_time:
         start_time = format_times(times = [start_time], _format="MJD")[0]

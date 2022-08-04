@@ -69,8 +69,9 @@ class Detections():
             filters = validate_filters(filters)
 
             if self.filters and self.filters != filters:
-                msg = f"Filters have already been specified when Detections was initialised. Initialised filters included: {self.filters}. Overiding filters for this query to include the specified most recent input: {filters}."
-                warnings.warn(msg)
+                #msg = f"Filters have already been specified when Detections was initialised. Initialised filters included: {self.filters}. Overiding filters for this query to include the specified most recent input: {filters}."
+                #warnings.warn(msg)
+                pass
             if filters:        
                 conditions.append(diasource.c['filter'].in_(filters))
        
@@ -80,8 +81,6 @@ class Detections():
                 conditions.append(diasource.c['filter'].in_(self.filters))
                 
         return filters, conditions       
-    
-    
     
     
     @staticmethod
@@ -247,15 +246,16 @@ class Detections():
         self,
         min_hd : float = None,
         max_hd : float = None,
+        filters: Optional[list] = None,
         title : Optional[str] = None,
         marginals: Optional[bool] = False,
         library: Optional[str] =  "seaborn",
         cache_data: Optional[bool] = False,
         add_planets: Optional[bool] = False
-
     ):
-        # validate min_hd, max_hd
-        #start = time.time()
+
+        
+        
         cols = [
             diasource.c['filter'],
             diasource.c['midpointtai'], 
@@ -266,7 +266,8 @@ class Detections():
            ]
 
         conditions = []
-
+        
+        filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
 
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
@@ -324,10 +325,33 @@ class Detections():
             
         return lc   
 
-            
-    def heliocentric_hexplot(
+    def single_heliocentric_histogram(
         self,
-        #split into multiplot
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd: Optional[float] = None,
+        max_hd: Optional[float] = None,
+        add_planets: Optional[bool] = False
+
+    ):
+        
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+            
+        plots = []
+
+        for _filter in filters:
+            plots.append(self.heliocentric_histogram(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets))
+    
+        return plots
+        
+        
+    def heliocentric_hexplot(
+        self,     
+        filters: Optional[list] = None,
+        
         min_hd : float = None,
         max_hd : float = None,
         
@@ -350,7 +374,8 @@ class Detections():
            ]
 
         conditions = []
-
+        
+        filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
 
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
@@ -363,7 +388,6 @@ class Detections():
 
         if max_hd:
             conditions.append(sssource.c['heliocentricdist'] <= max_hd)
-
 
         #conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
 
@@ -385,8 +409,6 @@ class Detections():
 
         if marginals:
             
-            #lc.ax.set_title(title if title else f"")            
-
             lc.ax[0].set_xlim(-(max_hd), max_hd)
             lc.ax[0].set_ylim(-(max_hd), max_hd)
         
@@ -405,12 +427,33 @@ class Detections():
         return lc  
         
     
+    def single_heliocentric_hexplot(
+        self,
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd: Optional[float] = None,
+        max_hd: Optional[float] = None,
+        add_planets: Optional[bool] = False
+
+    ):
+        
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+            
+        plots = []
+
+        for _filter in filters:
+            plots.append(self.heliocentric_hexplot(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+        
+        return plots
+    
     def topocentric_view(
         self,
         #split into multiplot
         min_hd : float = None,
         max_hd : float = None,
-        
         
         filters: Optional[list] = None,
         title : Optional[str] = None,
@@ -465,7 +508,6 @@ class Detections():
                 #**orbital_elements
             )
         
-        
         if projection:
             projection = projection.lower()
             
@@ -514,17 +556,7 @@ class Detections():
             lc.fig.set_figwidth(7)
             lc.fig.set_figheight(7)
             
-        if add_planets and projection != "3d":
-            df_max_x = abs(df['topocentricx'].max()) 
-            df_min_x = abs(df['topocentricx'].min())
-            
-            df_max_y = abs(df['topocentricy'].max()) 
-            df_min_y = abs(df['topocentricy'].min())
-            
-            df_max = df_max_x if df_max_x >= df_max_y else df_max_y
-            df_min = df_min_x if df_min_x >= df_min_y else df_min_y
-            
-            self.add_planets(ax = lc.ax, xlim = df_max if df_max >= df_min else df_min)
+
             
         return lc
     
@@ -534,8 +566,7 @@ class Detections():
         cache_data: Optional[bool] = False,
         min_hd : float = None,
         max_hd : float = None,
-        add_planets : Optional[bool] = False
-
+        #add_planets : Optional[bool] = False
     ):
         
            
@@ -547,7 +578,7 @@ class Detections():
         plots = []
         
         for _filter in filters:
-            plots.append(self.topocentric_view(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets))
+            plots.append(self.topocentric_view(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
             
         return plots
     
@@ -556,11 +587,12 @@ class Detections():
         #split into multiplot
         min_hd : float = None,
         max_hd : float = None,        
+        filters: Optional[list] = None,
         title : Optional[str] = None,
-        marginals: Optional[bool] = False,
+        marginals: Optional[bool] = True,
         library: Optional[str] =  "seaborn",
         cache_data: Optional[bool] = False,
-        add_planets: Optional[bool] = False
+        #add_planets: Optional[bool] = False
     ):
         # validate min_hd, max_hd
         #start = time.time()
@@ -574,7 +606,8 @@ class Detections():
            ]
 
         conditions = []
-
+        
+        filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
 
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
@@ -603,8 +636,7 @@ class Detections():
                 end_time = self.end_time,
             )
 
-
-        lc = Histogram2D(data = df, x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data, xlabel = "Topocentric X (au)", ylabel = "Topocentric Y (au)", marginals = marginals)
+        lc = Histogram2D(data = df, x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data, xlabel = "Topocentric X (au)", ylabel = "Topocentric Y (au)", marginals = marginals, title = title)
         #lc.ax.scatter(x = [0], y = [0], c = "black")
 
         if marginals:
@@ -616,30 +648,41 @@ class Detections():
         #lc.fig.set_figwidth(12)
         #lc.fig.set_figheight(12)
 
-        if add_planets:
-            df_max_x = abs(df['topocentricx'].max()) 
-            df_min_x = abs(df['topocentricx'].min())
-            
-            df_max_y = abs(df['topocentricy'].max()) 
-            df_min_y = abs(df['topocentricy'].min())
-            
-            df_max = df_max_x if df_max_x >= df_max_y else df_max_y
-            df_min = df_min_x if df_min_x >= df_min_y else df_min_y
-           
-            
-            self.add_planets(ax = lc.ax[0], xlim = df_max if df_max >= df_min else df_min)
+       
         return lc
     
+    def single_topocentric_histogram(
+        self,
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd : float = None,
+        max_hd : float = None,
+        #add_planets : Optional[bool] = False
+
+    ):
+        
+           
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+        
+        plots = []
+        
+        for _filter in filters:
+            plots.append(self.topocentric_histogram(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+            
     def topocentric_hexplot(
         self,
         #split into multiplot
         min_hd : float = None,
         max_hd : float = None,
+        filters: Optional[list] = None,
         title : Optional[str] = None,
         marginals: Optional[bool] = True,
         library: Optional[str] =  "seaborn",
         cache_data: Optional[bool] = False,
-        add_planets: Optional[bool] = False
+        #add_planets: Optional[bool] = False
     ):
         # validate min_hd, max_hd
         #start = time.time()
@@ -654,7 +697,8 @@ class Detections():
 
         conditions = []
 
-
+        filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
+        
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
 
@@ -683,7 +727,7 @@ class Detections():
             )
 
 
-        lc = HexagonalPlot(data = df, x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data, xlabel = "Topocentric X (au)", ylabel = "Topocentric Y (au)")
+        lc = HexagonalPlot(data = df, x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data, xlabel = "Topocentric X (au)", ylabel = "Topocentric Y (au)", title = title)
         #lc.ax.scatter(x = [0], y = [0], c = "black")
         if marginals:
             
@@ -697,22 +741,31 @@ class Detections():
         #lc.fig.set_figwidth(12)
         #lc.fig.set_figheight(12)
         
-        if add_planets:
-            df_max_x = abs(df['topocentricx'].max()) 
-            df_min_x = abs(df['topocentricx'].min())
-            
-            df_max_y = abs(df['topocentricy'].max()) 
-            df_min_y = abs(df['topocentricy'].min())
-            
-            df_max = df_max_x if df_max_x >= df_max_y else df_max_y
-            df_min = df_min_x if df_min_x >= df_min_y else df_min_y
-            
-            
-            self.add_planets(ax = lc.ax[0], xlim = df_max if df_max >= df_min else df_min)
+        
           
         return lc
 
+    def single_topocentric_hexplot(
+        self,
+        filters: Optional[list] = None,
+        cache_data: Optional[bool] = False,
+        min_hd : float = None,
+        max_hd : float = None,
+        #add_planets : Optional[bool] = False
+    ):
         
+           
+        filters, _ = self.filter_conditions(filters = filters, conditions = [])
+        
+        if filters == None:
+            filters = ["g", "r", "i", "z", "y", "u"]
+        
+        plots = []
+        
+        for _filter in filters:
+            plots.append(self.topocentric_hexplot(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+    
+    
     @staticmethod
     def orbital_relations(   
         x : Literal["incl", "q", "e", "a"],
@@ -783,8 +836,6 @@ class Detections():
         if plot_type == "2d_hist":
             hp = Histogram2D(data = df, x = x, y = y, cache_data = cache_data, xlabel=xlabel, ylabel=ylabel, title = title, marginals = marginals)
             
-       
-
         return hp
     
     def orbital_relations_scatter(
