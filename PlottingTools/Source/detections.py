@@ -578,7 +578,7 @@ class Detections():
         plots = []
         
         for _filter in filters:
-            plots.append(self.topocentric_view(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+            plots.append(self.topocentric_view(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, title = f"{_filter} Filter"))
             
         return plots
     
@@ -670,7 +670,7 @@ class Detections():
         plots = []
         
         for _filter in filters:
-            plots.append(self.topocentric_histogram(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+            plots.append(self.topocentric_histogram(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, title = f"{_filter} Filter"))
             
     def topocentric_hexplot(
         self,
@@ -763,7 +763,7 @@ class Detections():
         plots = []
         
         for _filter in filters:
-            plots.append(self.topocentric_hexplot(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets, title = f"{_filter} Filter"))
+            plots.append(self.topocentric_hexplot(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, title = f"{_filter} Filter"))
     
     
     @staticmethod
