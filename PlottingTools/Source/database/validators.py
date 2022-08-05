@@ -54,7 +54,14 @@ def validate_inclination(min_incl: float = None, max_incl:float = None):
     
     return min_incl, max_incl
         
-    
+def validate_heliocentric_dist(min_hd : float, max_hd : None):
+    if (min_hd and min_hd < 0) or (max_hd and max_hd < 0):
+        raise Exception("min_hd and max_hd must be greater than 0")
+    if (min_hd and max_hd) and min_hd > max_hd:
+        raise Exception("max_hd must be greater than min_hd")
+        
+    return min_hd, max_hd
+
 def validate_semi_major_axis(min_a : float = None, max_a:float = None):
     if (min_a and min_a < 0) or (max_a and max_a < 0):
         raise Exception("min_a and max_a must be greater than 0")
@@ -64,12 +71,13 @@ def validate_semi_major_axis(min_a : float = None, max_a:float = None):
     return min_a, max_a
 
 
-elements = ['min_a', 'max_a', 'min_e', 'max_e', 'min_q', 'max_q', 'min_incl', 'max_incl']
+elements = ['min_a', 'max_a', 'min_e', 'max_e', 'min_q', 'max_q', 'min_incl', 'max_incl', 'min_hd', 'max_hd']
 
 def validate_orbital_elements(**kwargs):
     for kwarg in kwargs:
         if kwarg not in elements:
             raise Exception(f"{kwarg} not a valid orbital_element argument. Valid arguments include {elements}")
+            
     min_a, max_a = validate_semi_major_axis(
         min_a = kwargs['min_a'] if 'min_a' in kwargs else None, 
         max_a = kwargs['max_a'] if 'max_a' in kwargs else None
@@ -84,4 +92,9 @@ def validate_orbital_elements(**kwargs):
     )
     min_e, max_e = kwargs['min_e'] if 'min_e' in kwargs else None, kwargs['max_e'] if 'max_e' in kwargs else None
     
-    return min_a, max_a, min_incl, max_incl, min_q, max_q, min_e, max_e
+    min_hd, max_hd = validate_heliocentric_dist(
+        min_hd = kwargs['min_hd'] if 'min_hd' in kwargs else None, 
+        max_hd = kwargs['max_hd'] if 'max_hd' in kwargs else None
+    )
+    
+    return min_a, max_a, min_incl, max_incl, min_q, max_q, min_e, max_e, min_hd, max_hd

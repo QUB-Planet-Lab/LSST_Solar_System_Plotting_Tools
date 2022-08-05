@@ -1,10 +1,10 @@
-from .schemas import mpcorb
+from .schemas import mpcorb, sssource
 from .validators import validate_orbital_elements
 
 
 def create_orbit_conditions(conditions : list = [], **orbital_elements):
     
-    min_a, max_a, min_incl, max_incl, min_q, max_q, min_e, max_e = validate_orbital_elements(**orbital_elements)
+    min_a, max_a, min_incl, max_incl, min_q, max_q, min_e, max_e, min_hd, max_hd = validate_orbital_elements(**orbital_elements)
         
     if min_q:
         conditions.append(mpcorb.c['q'] >= min_q)
@@ -41,5 +41,11 @@ def create_orbit_conditions(conditions : list = [], **orbital_elements):
     
     if max_a:
         conditions.append((mpcorb.c['q'] / (1 - mpcorb.c['e']) ) <= max_a)
-        
+    
+    if min_hd:
+        conditions.append(sssource.c['heliocentricdist'] >= min_hd)
+    
+    if max_hd:
+        conditions.append(sssource.c['heliocentricdist'] <= max_hd)
+            
     return conditions

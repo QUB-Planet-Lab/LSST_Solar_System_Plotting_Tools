@@ -6,7 +6,7 @@ from plots.symbols import DEGREE
 from plots.styles.filter_color_scheme import COLOR_SCHEME
 
 from database import db
-from database.schemas import DIASource, diasource, mpcorb
+from database.schemas import DIASource, diasource, mpcorb, sssource
 from database.validators import validate_times, validate_filters,\
     validate_perihelion, validate_inclination, validate_semi_major_axis, validate_orbital_elements
 from database.format_time import format_times
@@ -61,11 +61,9 @@ def _tisserand_relations(
         else:
             qy = mpcorb.c[y]
 
-
-        a_J = 5.2038 # au
+        a_J = 5.2038 #au
 
         tisserand = (a_J / (mpcorb.c['q'] / (1 - mpcorb.c['e'])) + 2 * func.cos(mpcorb.c['incl']) * func.sqrt((mpcorb.c['q'] / (1 - mpcorb.c['e'])) / a_J * (1 - func.power(mpcorb.c['e'], 2)))).label("tisserand")
-
 
         df = db.query(
             select(
@@ -125,6 +123,8 @@ def _orbital_relations(
             conditions.append(diasource.c['midpointtai'] <= end_time)
 
         conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+        
+        print(conditions)
 
         if x == "a":
             qx = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')
@@ -165,9 +165,7 @@ def _orbital_relations(
     ylabel = ELEMENTS[y]['label']
     if ELEMENTS[y]['unit']:
         ylabel += f" ({ELEMENTS[y]['unit']})"
-    
-    print(xlabel, ylabel)
-    
+        
     if plot_type == "scatter":
         return ScatterPlot(data = df, x=x, y=y, xlabel = xlabel, ylabel =  ylabel, title = title if title else "")
     
@@ -188,7 +186,6 @@ def _orbital_relations(
                          marginals = True, 
                          title = title
                         )
-
         return hp
     
 def base(
@@ -201,6 +198,7 @@ def base(
          title : Optional[str] = None,
          library: Optional[str] = "seaborn",
          cache_data: Optional[bool] = False,
+         position : Optional[list] = None,
          **orbital_elements
         ):
     
@@ -219,6 +217,7 @@ def base(
         xlabel += f' ({unit})'
         
     args = dict(x = element, 
+                position = position,
                 xlabel = f'{xlabel}',
                ) 
     
@@ -334,7 +333,7 @@ def eccentricity(
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
     cache_data: Optional[bool] = False,
-    distinct: Optional[bool] = False,
+    position : Optional[list] = None,
     **orbital_elements
 ):
     if df is None:
@@ -353,9 +352,12 @@ def eccentricity(
         
         conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
         
+       
+        
         stmt = select(
             distinct(mpcorb.c['ssobjectid']).label("ssobjectid") if distinct else mpcorb.c['ssobjectid'], mpcorb.c['e'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
+        
         
         df = db.query(
             stmt.where(
@@ -378,6 +380,7 @@ def eccentricity(
         plot_type = plot_type,
         title = title,
         element = 'e',
+        position = position,
         cache_data = cache_data,
         **orbital_elements
     )
@@ -390,7 +393,7 @@ def perihelion(
     plot_type: Literal[PLOT_TYPES] = 'BOX',
     title : Optional[str] = None,
     cache_data: Optional[bool] = False,
-    distinct: Optional[bool] = False,
+    position : Optional[list] = None,
     **orbital_elements
 ):
     if df is None:
@@ -412,7 +415,6 @@ def perihelion(
         
         stmt = select( distinct(mpcorb.c['ssobjectid']).label("ssobjectid") if distinct else mpcorb.c['ssobjectid'], mpcorb.c['q'], diasource.c['filter']).join(
             diasource, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid'])
-            
         df = db.query(
             stmt.where(
                 *conditions
@@ -434,6 +436,7 @@ def perihelion(
         plot_type = plot_type,
         title = title,
         element = 'q',
+        position = position,
         cache_data = cache_data
     )
         
@@ -446,6 +449,7 @@ def inclination(
     title : Optional[str] = None,
     cache_data: Optional[bool] = False,
     distinct: Optional[bool] = False,
+    position : Optional[list] = None,
     **orbital_elements
 ):
     
@@ -489,6 +493,7 @@ def inclination(
         plot_type = plot_type,
         title = title,
         element = 'incl',
+        position = position,
         cache_data = cache_data
     )
         
@@ -501,6 +506,7 @@ def semi_major_axis(
     title : Optional[str] = None,
     cache_data: Optional[bool] = False,
     distinct: Optional[bool] = False,
+    position : Optional[list] = None,
     **orbital_elements
 ):
     if df is None:
@@ -552,6 +558,7 @@ def semi_major_axis(
         plot_type = plot_type,
         title = title,
         element = 'a',
+        position = position,
         cache_data = cache_data
     )
     

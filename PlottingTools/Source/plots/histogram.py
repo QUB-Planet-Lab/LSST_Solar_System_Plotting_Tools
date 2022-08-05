@@ -12,81 +12,68 @@ LIBRARIES = ['matplotlib', 'seaborn']
 
 class HexagonalPlot(Plot):
     def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", colorbar : bool = True, library = 'seaborn', cache_data: Optional[bool] = False):
-            super().__init__(data, xlabel, ylabel, title, library, cache_data)
+        super().__init__(data, xlabel, ylabel, title, library, cache_data)
             
-            
-            self.fig.clear()
-            
-            sns.set_theme(style="ticks")
+        self.x = x
+        self.y = y
+        self.xlabel = xlabel
+        self.ylabel = ylabel
 
-            self.plot = sns.jointplot(data = data, x = x , y = y, marginal_ticks=True, kind="hex", color = "blue")
-            
-            self.plot.ax_joint.set(xlabel = xlabel, ylabel = ylabel)
-            
-            
-            
-            self.fig = self.plot.figure
-            self.fig.suptitle(title)
-            
-                
-            self.ax = [self.plot.ax_joint, self.plot.ax_marg_x, self.plot.ax_marg_y]
-            
-            
-            
-            cbar_ax = self.plot.fig.add_axes([1, .25, .04, .5])
-            
-            #self.plot.fig.colorbar(cax = cbar_ax, ax = self.ax[0])
-            plt.colorbar(cax=cbar_ax)
+        self.fig.clear()
 
-            '''
-            if colorbar:
-                cbar_ax = self.fig.add_axes([1, .25, .025, .4])  # x, y, width, height
-                norm = plt.Normalize(self.plot.figure.get_array().min(), self.plot.get_array().max())
-                sm = plt.cm.ScalarMappable(cmap="Blues", norm=norm)
-                sm.set_array([])
+        sns.set_theme(style="ticks")
+        self.plot = sns.jointplot(data = data, x = x , y = y, marginal_ticks=True, kind="hex", color = "blue")
 
-                self.plot.figure.colorbar(cax=cbar_ax, mappable = sm, shrink = 0.5)
-           '''
+        self.plot.ax_joint.set(xlabel = xlabel, ylabel = ylabel)
+
+        self.fig = self.plot.figure
+        self.fig.suptitle(title)
+        self.ax = [self.plot.ax_joint, self.plot.ax_marg_x, self.plot.ax_marg_y]
+        cbar_ax = self.plot.fig.add_axes([1, .25, .04, .5])
+
+        plt.colorbar(cax=cbar_ax)
+
+                            
             
 class Histogram2D(Plot):
-      def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", colorbar : bool = True, library = 'seaborn', cache_data: Optional[bool] = False, marginals : Optional[bool] = False, hex_plot: Optional[bool] = False):
-            super().__init__(data, xlabel, ylabel, title, library, cache_data)
+    def __init__(self, data, x, y: Optional[str] = None, xbins : Optional[list] = None, ybins: Optional[list] = None, xlabel: str = "" , ylabel : str = "", title: str = "", colorbar : bool = True, library = 'seaborn', cache_data: Optional[bool] = False, marginals : Optional[bool] = False, hex_plot: Optional[bool] = False):
+        super().__init__(data, xlabel, ylabel, title, library, cache_data)
 
-            self.fig.clear()
+        self.fig.clear()
 
-            if not marginals:
-                self.plot = sns.histplot(data = data, x= x, y = y, cbar = colorbar)
-                self.plot.set(xlabel = xlabel, ylabel = ylabel)
-                self.fig = self.plot.figure
-                
-                self.fig.suptitle(title)
+        if not marginals:
+            self.plot = sns.histplot(data = data, x= x, y = y, cbar = colorbar)
+            self.plot.set(xlabel = xlabel, ylabel = ylabel)
+            self.fig = self.plot.figure
 
-            
-            else:
-                sns.set_theme(style="ticks")
+            self.fig.suptitle(title)
 
-                self.plot = sns.JointGrid(data = data, x = x , y = y, marginal_ticks=True)
-                #self.plot.set_axis_labels(xlabel = xlabel, ylabel = ylabel)
-                
-                self.plot.ax_joint.set_xlabel(xlabel)
-                self.plot.ax_joint.set_ylabel(ylabel)
-                
-                # Set a log scaling on the y axis
-                #g.ax_joint.set(yscale="log")
 
-                # Create an inset legend for the histogram colorbar
-                cax = self.plot.figure.add_axes([1, .25, .04, .5])
+        else:
+            sns.set_theme(style="ticks")
 
-                # Add the joint and marginal histogram plots
-                self.plot.plot_joint(
-                    sns.histplot, discrete=(False, False),
-                    cmap="light:#03012d", pmax=.8, cbar=True, cbar_ax=cax
-                )
-                self.plot.plot_marginals(sns.histplot, color="#03012d")
-                self.fig = self.plot.figure
-                self.ax = [self.plot.ax_joint, self.plot.ax_marg_x, self.plot.ax_marg_y]
-                
-                self.fig.suptitle(title)
+            self.plot = sns.JointGrid(data = data, x = x , y = y, marginal_ticks=True)
+            #self.plot.set_axis_labels(xlabel = xlabel, ylabel = ylabel)
+
+            self.plot.ax_joint.set_xlabel(xlabel)
+            self.plot.ax_joint.set_ylabel(ylabel)
+
+            # Set a log scaling on the y axis
+            #g.ax_joint.set(yscale="log")
+
+            # Create an inset legend for the histogram colorbar
+            cax = self.plot.figure.add_axes([1, .25, .04, .5])
+
+            # Add the joint and marginal histogram plots
+            self.plot.plot_joint(
+                sns.histplot, discrete=(False, False),
+                cmap="light:#03012d", pmax=.8, cbar=True, cbar_ax=cax
+            )
+            self.plot.plot_marginals(sns.histplot, color="#03012d")
+            self.fig = self.plot.figure
+            self.ax = [self.plot.ax_joint, self.plot.ax_marg_x, self.plot.ax_marg_y]
+
+            self.fig.suptitle(title)
     
     
 class HistogramPlot(Plot):

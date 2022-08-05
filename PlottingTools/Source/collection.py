@@ -4,8 +4,6 @@ from database.schemas import sssource, mpcorb, diasource
 from database.conditions import create_orbit_conditions
 
 from orbital_element_distributions import _orbital_relations, eccentricity, perihelion, semi_major_axis, inclination, _tisserand_relations
-#change to relations
-
 
 from objects_in_field import objects_in_field
 
