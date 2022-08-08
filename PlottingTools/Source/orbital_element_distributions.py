@@ -104,7 +104,8 @@ def _orbital_relations(
     x : Literal["incl", "q", "e", "a"],
     y : Literal["incl", "q", "e", "a"],
     df : Optional[pd.DataFrame] = None,
-    start_time : Optional[float] = None, end_time : Optional[float] = None,
+    start_time : Optional[float] = None,
+    end_time : Optional[float] = None,
     title : Optional[str] = None,
     colorbar: bool = True,
     plot_type : Literal["scatter", "2d_hist", "2d_hex"] = "scatter",
@@ -124,7 +125,6 @@ def _orbital_relations(
 
         conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
         
-        print(conditions)
 
         if x == "a":
             qx = (mpcorb.c['q'] / (1 - mpcorb.c['e'])).label('a')

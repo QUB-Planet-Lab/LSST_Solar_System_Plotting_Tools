@@ -29,14 +29,15 @@ from Barcharts import MonthlyHelioDistHist, YearlyHelioDistHist, Weekly24hrHist,
 
 from Functions import Queries, DateorMJD
 
-import warnings
-
 from orbital_element_distributions import eccentricity, inclination, semi_major_axis, perihelion 
 
 
 from matplotlib import patches
 
-# from previous years
+from detections_utils import _heliocentric_view, _heliocentric_histogram, _heliocentric_hexplot, _topocentric_view, _topocentric_histogram, _topocentric_hexplot
+
+from detections_utils import monthly_detection_distributions, yearly_detection_distributions, _daily_detection_distributions
+
 
 ELEMENTS = {'e' : {'label': 'Eccentricity','unit' : None},\
             'a' : {'label': 'Semi-Major axis', 'unit': 'au'},\
@@ -44,7 +45,6 @@ ELEMENTS = {'e' : {'label': 'Eccentricity','unit' : None},\
             'incl' : {'label' : 'Inclination', 'unit' : DEGREE}
            }
 TIMEFRAME = ['daily', 'monthly', 'yearly']
-
 
 class Detections():
     def __init__(
@@ -95,15 +95,15 @@ class Detections():
                 orbital_elements[element] = self.orbital_elements[element]
         return orbital_elements
     
-    def orbital_conditions(self, conditions, **orbital_elements):
-        
+    def orbital_conditions(self, conditions, helio, **orbital_elements):
+
         _ = validate_orbital_elements(**orbital_elements)
 
         orbital_elements = self.merge_orbital_arguments(
             **orbital_elements
         )
-
-        return create_orbit_conditions(conditions = conditions, **orbital_elements)
+       
+        return orbital_elements, create_orbit_conditions(conditions = conditions, helio=helio, **orbital_elements)
         
        
     @staticmethod
@@ -131,124 +131,40 @@ class Detections():
         projection: Optional[Literal['2d', '3d']] = '2d',
         library: Optional[str] =  "seaborn",
         cache_data: Optional[bool] = False,
-        add_planets: Optional[bool] = False,
+        planets: Optional[bool] = False,
         **orbital_elements
     ):
-        # validate min_hd, max_hd
-        cols = [
-                diasource.c['filter'],
-                diasource.c['midpointtai'], 
-                sssource.c['heliocentricx'],
-                sssource.c['heliocentricy'],
-                sssource.c['heliocentricz'],
-                diasource.c['mag']
-               ]
-
-        conditions = []
-
-        filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
         
-        conditions = self.orbital_conditions(conditions = conditions, **orbital_elements)
+        conditions = []
+        
+        filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
+
+        orbital_elements, conditions = self.orbital_conditions(conditions = conditions, helio = True, **orbital_elements)
         
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
 
         if self.end_time:
             conditions.append(diasource.c['midpointtai'] <= self.end_time)
-        
-        stmt = select(*cols).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
-
-        df = db.query(
-                 stmt
-        )
-
-        if df.empty:
-            return empty_response(
-                start_time = self.start_time,
-                end_time = self.end_time,
-                filters = filters,
-                #**orbital_elements
-            )
-        
-        
-        if projection:
-            projection = projection.lower()
-            
-            if filters:
-                lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="heliocentricx", y = "heliocentricy", z="heliocentricz" , projection = projection, library = library, cache_data = cache_data, data_copy = df)
-
-                if projection == "3d":
-                        lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black") ## add sun and earth?
-                else:
-                        lc.ax.scatter(x = [0], y = [0], c = "black") ## add sun and earth?
-
-                for _filter in filters:
-                    df_filter = df[df['filter'] == _filter]
-
-                    if not df_filter.empty:
-
-                        if projection == "2d":
-                            lc.ax.scatter(x = df_filter['heliocentricx'] , y = df_filter['heliocentricy'], c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
-
-                        elif projection == '3d':
-                            lc.ax.scatter(xs = df_filter['heliocentricx'] , ys = df_filter['heliocentricy'], zs=df_filter['heliocentricz'] ,c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
-                            lc.ax.legend(loc="upper right")
-                lc.ax.legend()
-            else:
-                if projection == '2d':
-                    lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data)
-                    lc.ax.scatter(x = [0], y = [0], c = "black")
-                    
-                elif projection == '3d':
-                    lc = ScatterPlot(data = df, x = "heliocentricx", y = "heliocentricy", z = "heliocentricz", projection = '3d', library = library, cache_data = cache_data)
-                    lc.ax.scatter(xs = [0], ys = [0], zs=[0] , c = "black")
-                    
-        lc.ax.set_xlabel("Heliocentric X (au)")
-        lc.ax.set_ylabel("Heliocentric Y (au)")
-        
-        
-        if projection == "3d":
-            lc.ax.set_zlabel("Heliocentric Z (au)")
-        lc.ax.set_title(title if title else f"")  
-        
-        _max = None
-        
-        if 'max_hd' in  orbital_elements:
-            _max = orbital_elements['max_hd']
-        
-        elif 'max_hd' in self.orbital_elements:
-            _max = self.orbital_elements['max_hd']
-        
-        if _max:
-            lc.ax.set_xlim(-(_max), _max)
-            lc.ax.set_ylim(-(_max), _max)
-            
-        lc.fig.set_figwidth(8)
-        lc.fig.set_figheight(8)
-        
-        if add_planets and projection != "3d":
-            
-            df_max_x = abs(df['heliocentricx'].max()) 
-            df_min_x = abs(df['heliocentricx'].min())
-            
-            df_max_y = abs(df['heliocentricy'].max()) 
-            df_min_y = abs(df['heliocentricy'].min())
-            
-            df_max = df_max_x if df_max_x >= df_max_y else df_max_y
-            df_min = df_min_x if df_min_x >= df_min_y else df_min_y
-   
-            
-            self.add_planets(ax = lc.ax, xlim = df_max if df_max >= df_min else df_min)
-        
-        return lc    
+               
+        return _heliocentric_view(
+            start_time = self.start_time,
+            end_time = self.end_time,
+            conditions = conditions,
+            filters = filters,
+            title = title,
+            projection = projection,
+            library = library,
+            cache_data = cache_data,
+            planets = planets,
+            **orbital_elements
+        )   
     
     def single_heliocentric_plots(
         self,
         filters: Optional[list] = None,
         cache_data: Optional[bool] = False,
-        min_hd: Optional[float] = None,
-        max_hd: Optional[float] = None,
-        add_planets: Optional[bool] = False,
+        planets: Optional[bool] = False,
         **orbital_elements
     ):
         filters, _ = self.filter_conditions(filters = filters, conditions = [])
@@ -259,38 +175,26 @@ class Detections():
         plots = []
 
         for _filter in filters:
-            plots.append(self.heliocentric_view(filters = [_filter], cache_data = cache_data, add_planets = add_planets, **orbital_elements))
+            plots.append(self.heliocentric_view(filters = [_filter], cache_data = cache_data, planets = planets, **orbital_elements))
     
         return plots
     
     def heliocentric_histogram(
         self,
-        min_hd : float = None,
-        max_hd : float = None,
         filters: Optional[list] = None,
         title : Optional[str] = None,
         marginals: Optional[bool] = True,
         library: Optional[str] =  "seaborn",
         cache_data: Optional[bool] = False,
-        add_planets: Optional[bool] = False,
+        planets: Optional[bool] = False,
         **orbital_elements
-
     ):
-
-        cols = [
-            diasource.c['filter'],
-            diasource.c['midpointtai'], 
-            sssource.c['heliocentricx'],
-            sssource.c['heliocentricy'],
-            sssource.c['heliocentricz'],
-            diasource.c['mag']
-           ]
-
+        
         conditions = []
         
         filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
         
-        conditions = self.orbital_conditions(conditions = conditions, **orbital_elements)
+        orbital_elements, conditions = self.orbital_conditions(conditions = conditions, helio = True, **orbital_elements)
         
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
@@ -298,63 +202,23 @@ class Detections():
         if self.end_time:
             conditions.append(diasource.c['midpointtai'] <= self.end_time)
 
-        stmt = select(*cols).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
-
-        df = db.query(
-             stmt
+        return _heliocentric_histogram(
+            start_time = self.start_time,
+            end_time = self.end_time,
+            conditions = conditions,
+            filters = filters,
+            title = title,
+            library = library,
+            cache_data = cache_data,
+            planets = planets,
+            **orbital_elements
         )
-
-        if df.empty:
-            return empty_response(
-                start_time = self.start_time,
-                end_time = self.end_time,
-                **orbital_elements
-            )
-
-
-        lc = Histogram2D(data = df, x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data, xlabel = "Heliocentric X (au)", ylabel = "Heliocentric Y (au)", marginals = marginals )
-            
-        _max = None
-        
-        if 'max_hd' in  orbital_elements:
-            _max = orbital_elements['max_hd']
-        
-        elif 'max_hd' in self.orbital_elements:
-            _max = self.orbital_elements['max_hd']
-        
-        
-        if _max:
-            if marginals:
-                lc.ax[0].set_xlim(-(_max), _max)
-                lc.ax[0].set_ylim(-(_max), _max)
-            else:
-                lc.ax.set_xlim(-(_max), _max)
-                lc.ax.set_ylim(-(_max), _max)
-                
-        
-        if add_planets:
-            df_max_x = abs(df['heliocentricx'].max()) 
-            df_min_x = abs(df['heliocentricx'].min())
-            
-            df_max_y = abs(df['heliocentricy'].max()) 
-            df_min_y = abs(df['heliocentricy'].min())
-            
-            df_max = df_max_x if df_max_x >= df_max_y else df_max_y
-            df_min = df_min_x if df_min_x >= df_min_y else df_min_y
-   
-            
-            self.add_planets(ax = lc.ax[0], xlim = df_max if df_max >= df_min else df_min)
-        
-            
-        return lc   
-
+    
     def single_heliocentric_histogram(
         self,
         filters: Optional[list] = None,
         cache_data: Optional[bool] = False,
-        min_hd: Optional[float] = None,
-        max_hd: Optional[float] = None,
-        add_planets: Optional[bool] = False,
+        planets: Optional[bool] = False,
         **orbital_elements
     ):
         
@@ -366,7 +230,7 @@ class Detections():
         plots = []
 
         for _filter in filters:
-            plots.append(self.heliocentric_histogram(filters = [_filter], cache_data = cache_data, add_planets = add_planets, **orbital_elements))
+            plots.append(self.heliocentric_histogram(filters = [_filter], cache_data = cache_data, planets = planets, **orbital_elements))
     
         return plots
         
@@ -377,86 +241,42 @@ class Detections():
         marginals: Optional[bool] = True,
         library: Optional[str] =  "seaborn",
         cache_data: Optional[bool] = False,
-        add_planets: Optional[bool] = False,
+        planets: Optional[bool] = False,
         **orbital_elements
     ):
-        # validate min_hd, max_hd
-        #start = time.time()
-        cols = [
-            diasource.c['filter'],
-            diasource.c['midpointtai'], 
-            sssource.c['heliocentricx'],
-            sssource.c['heliocentricy'],
-            sssource.c['heliocentricz'],
-            diasource.c['mag']
-           ]
 
         conditions = []
         
         filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
         
-        conditions = self.orbital_conditions(conditions = conditions, **orbital_elements)
+        orbital_elements, conditions = self.orbital_conditions(conditions = conditions, helio = True, **orbital_elements)
         
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
 
         if self.end_time:
             conditions.append(diasource.c['midpointtai'] <= self.end_time)
-
-
-        stmt = select(*cols).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
-
-        df = db.query(
-             stmt
-        )
-
-        if df.empty:
-            return empty_response(
-                start_time = self.start_time,
-                end_time = self.end_time,
-                **orbital_elements
-            )
-
-
-        lc = HexagonalPlot(data = df, x = "heliocentricx", y = "heliocentricy", library = library, cache_data = cache_data, xlabel = "Heliocentric X (au)", ylabel = "Heliocentric Y (au)")
-        #lc.ax.scatter(x = [0], y = [0], c = "black")
-        
-        _max = None
-        
-        if 'max_hd' in  orbital_elements:
-            _max = orbital_elements['max_hd']
-
-        elif 'max_hd' in self.orbital_elements:
-            _max = self.orbital_elements['max_hd']
             
-        if _max:
-            lc.ax[0].set_xlim(-(_max), _max)
-            lc.ax[0].set_ylim(-(_max), _max)
-            
+
+        return _heliocentric_hexplot(
+            start_time = self.start_time,
+            end_time = self.end_time,
+            conditions = conditions,
+            filters = filters,
+            title = title,
+            library = library,
+            cache_data = cache_data,
+            planets = planets,
+            **orbital_elements
+        )  
         
-        
-        if add_planets:
-            df_max_x = abs(df['heliocentricx'].max()) 
-            df_min_x = abs(df['heliocentricx'].min())
-            
-            df_max_y = abs(df['heliocentricy'].max()) 
-            df_min_y = abs(df['heliocentricy'].min())
-            
-            df_max = df_max_x if df_max_x >= df_max_y else df_max_y
-            df_min = df_min_x if df_min_x >= df_min_y else df_min_y
-   
-            self.add_planets(ax = lc.ax[0], xlim = df_max if df_max >= df_min else df_min)
-        
-        return lc  
-        
-    
     def single_heliocentric_hexplot(
         self,
         filters: Optional[list] = None,
         cache_data: Optional[bool] = False,
         min_hd: Optional[float] = None,
         max_hd: Optional[float] = None,
-        add_planets: Optional[bool] = False,
+        planets: Optional[bool] = False,
         **orbital_elements
     ):
         
@@ -468,7 +288,7 @@ class Detections():
         plots = []
 
         for _filter in filters:
-            plots.append(self.heliocentric_hexplot(filters = [_filter], cache_data = cache_data, add_planets = add_planets, title = f"{_filter} Filter", **orbital_elements))
+            plots.append(self.heliocentric_hexplot(filters = [_filter], cache_data = cache_data, planets = planets, title = f"{_filter} Filter", **orbital_elements))
         
         return plots
     
@@ -481,97 +301,28 @@ class Detections():
         cache_data: Optional[bool] = False,
         **orbital_elements
     ):
-        
-        cols = [
-                diasource.c['filter'],
-                diasource.c['midpointtai'], 
-                sssource.c['topocentricx'],
-                sssource.c['topocentricy'],
-                sssource.c['topocentricz'],
-                diasource.c['mag']
-               ]
-
         conditions = []
-
+        
         filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
         
-        conditions = self.orbital_conditions(conditions = conditions, **orbital_elements)
-
+        orbital_elements, conditions = self.orbital_conditions(conditions = conditions, helio = True, **orbital_elements)
+        
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
 
         if self.end_time:
             conditions.append(diasource.c['midpointtai'] <= self.end_time)
 
-        stmt = select(*cols).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
-
-        df = db.query(
-                 stmt
-        )
-
-        if df.empty:
-            return empty_response(
-                start_time = self.start_time,
-                end_time = self.end_time,
-                filters = filters,
-                **orbital_elements
-            )
-        
-        if projection:
-            projection = projection.lower()
-            
-            if filters:
-                lc = ScatterPlot(data = pd.DataFrame(columns = df.columns.values) , x ="topocentricx", y = "topocentricy", z="heliocentricz" , projection = projection, library = library, cache_data = cache_data, data_copy = df)
-
-                if projection == "3d":
-                        lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black") ## add sun and earth?
-                else:
-                        lc.ax.scatter(x = [0], y = [0], c = "black") ## add sun and earth?
-
-                for _filter in filters:
-                    df_filter = df[df['filter'] == _filter]
-
-                    if not df_filter.empty:
-
-                        if projection == "2d":
-                            lc.ax.scatter(x = df_filter['topocentricx'] , y = df_filter['topocentricy'], c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
-
-                        elif projection == '3d':
-                            lc.ax.scatter(xs = df_filter['topocentricx'] , ys = df_filter['topocentricy'], zs=df_filter['heliocentricz'] ,c = COLOR_SCHEME[_filter], label=f"{_filter}", marker = FILTER_SYMBOLS[_filter])
-                            lc.ax.legend(loc="upper right")
-                lc.ax.legend()
-            else:
-                if projection == '2d':
-                    lc = ScatterPlot(data = df, x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data)
-                    lc.ax.scatter(x = [0], y = [0], c = "black")
-                    
-
-                elif projection == '3d':
-                    lc = ScatterPlot(data = df, x = "topocentricx", y = "topocentricy", z = "topocentricz", projection = '3d', library = library, cache_data = cache_data)
-                    lc.ax.scatter(xs = [0], ys = [0], zs=[0] ,c = "black")
-                    
-                    
-        lc.ax.set_xlabel("Topocentric X (au)")
-        lc.ax.set_ylabel("Topocentric Y (au)")
-        
-        
-        if projection == "3d":
-            lc.ax.set_zlabel("Topocentric Z (au)")
-        lc.ax.set_title(title if title else f"")         
-        
-        
-        _max = None
-        
-        if 'max_hd' in  orbital_elements:
-            _max = orbital_elements['max_hd']
-
-        elif 'max_hd' in self.orbital_elements:
-            _max = self.orbital_elements['max_hd']
-        if _max:
-            lc.ax.set_xlim(-(_max), _max)
-            lc.ax.set_ylim(-(_max), _max)
-            
-        return lc
+        return _topocentric_view(
+            start_time = self.start_time,
+            end_time = self.end_time,
+            conditions = conditions,
+            filters = filters,
+            title = title,
+            library = library,
+            cache_data = cache_data,
+            **orbital_elements
+        )  
     
     def single_topocentric_plots(
         self,
@@ -602,61 +353,29 @@ class Detections():
         cache_data: Optional[bool] = False,
         **orbital_elements
     ):
-        
-        cols = [
-            diasource.c['filter'],
-            diasource.c['midpointtai'], 
-            sssource.c['topocentricx'],
-            sssource.c['topocentricy'],
-            sssource.c['topocentricz'],
-            diasource.c['mag']
-           ]
-
         conditions = []
         
         filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
         
-        conditions = self.orbital_conditions(conditions = conditions, **orbital_elements)
-
+        orbital_elements, conditions = self.orbital_conditions(conditions = conditions, helio = True, **orbital_elements)
         
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
 
         if self.end_time:
             conditions.append(diasource.c['midpointtai'] <= self.end_time)
+            
 
-        stmt = select(*cols).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
-
-        df = db.query(
-             stmt
-        )
-
-        if df.empty:
-            return empty_response(
-                start_time = self.start_time,
-                end_time = self.end_time,
-            )
-
-        lc = Histogram2D(data = df, x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data, xlabel = "Topocentric X (au)", ylabel = "Topocentric Y (au)", marginals = marginals, title = title)
-        #lc.ax.scatter(x = [0], y = [0], c = "black")
-        
-        _max = None
-        
-        if 'max_hd' in  orbital_elements:
-            _max = orbital_elements['max_hd']
-
-        elif 'max_hd' in self.orbital_elements:
-            _max = self.orbital_elements['max_hd']
-        if _max:
-            if marginals:
-                lc.ax[0].set_xlim(-(_max), _max)
-                lc.ax[0].set_ylim(-(_max), _max)
-            else:
-                lc.ax.set_xlim(-(_max), _max)
-                lc.ax.set_ylim(-(_max), _max)
-       
-        return lc
-    
+        return _topocentric_histogram(
+            start_time = self.start_time,
+            end_time = self.end_time,
+            conditions = conditions,
+            filters = filters,
+            title = title,
+            library = library,
+            cache_data = cache_data,
+            **orbital_elements
+        )  
     def single_topocentric_histogram(
         self,
         filters: Optional[list] = None,
@@ -676,8 +395,6 @@ class Detections():
             
     def topocentric_hexplot(
         self,
-        min_hd : float = None,
-        max_hd : float = None,
         filters: Optional[list] = None,
         title : Optional[str] = None,
         marginals: Optional[bool] = True,
@@ -685,23 +402,11 @@ class Detections():
         cache_data: Optional[bool] = False,
         **orbital_elements
     ):
-        # validate min_hd, max_hd
-        #start = time.time()
-        cols = [
-            diasource.c['filter'],
-            diasource.c['midpointtai'], 
-            sssource.c['topocentricx'],
-            sssource.c['topocentricy'],
-            sssource.c['topocentricz'],
-            diasource.c['mag']
-           ]
-
         conditions = []
-
+        
         filters, conditions = self.filter_conditions(filters = filters, conditions = conditions)
         
-        conditions = self.orbital_conditions(conditions = conditions, **orbital_elements)
-
+        orbital_elements, conditions = self.orbital_conditions(conditions = conditions, helio = True, **orbital_elements)
         
         if self.start_time:
             conditions.append(diasource.c['midpointtai'] >= self.start_time)
@@ -709,48 +414,24 @@ class Detections():
         if self.end_time:
             conditions.append(diasource.c['midpointtai'] <= self.end_time)
 
+        return _heliocentric_hexplot(
+            start_time = self.start_time,
+            end_time = self.end_time,
+            conditions = conditions,
+            filters = filters,
+            title = title,
+            library = library,
+            cache_data = cache_data,
+            **orbital_elements
+        )  
 
-        stmt = select(*cols).join(sssource, sssource.c['diasourceid'] == diasource.c['diasourceid']).where(*conditions)
-
-        df = db.query(
-             stmt
-        )
-
-        if df.empty:
-            return empty_response(
-                start_time = self.start_time,
-                end_time = self.end_time,
-                **orbital_elements
-            )
-
-
-        lc = HexagonalPlot(data = df, x = "topocentricx", y = "topocentricy", library = library, cache_data = cache_data, xlabel = "Topocentric X (au)", ylabel = "Topocentric Y (au)", title = title)
-        #lc.ax.scatter(x = [0], y = [0], c = "black")
-        _max = None
-        
-        if 'max_hd' in  orbital_elements:
-            _max = orbital_elements['max_hd']
-
-        elif 'max_hd' in self.orbital_elements:
-            _max = self.orbital_elements['max_hd']
-        if _max:
-            if marginals:
-                lc.ax[0].set_xlim(-(_max), _max)
-                lc.ax[0].set_ylim(-(_max), _max)
-            else:
-                lc.ax.set_xlim(-(_max), _max)
-                lc.ax.set_ylim(-(_max), _max)
-                
-        return lc
-
+    
     def single_topocentric_hexplot(
         self,
         filters: Optional[list] = None,
         cache_data: Optional[bool] = False,
         **orbital_elements
-    ):
-        
-           
+    ):           
         filters, _ = self.filter_conditions(filters = filters, conditions = [])
         
         if filters == None:
@@ -759,7 +440,10 @@ class Detections():
         plots = []
         
         for _filter in filters:
-            plots.append(self.topocentric_hexplot(filters = [_filter], cache_data = cache_data, title = f"{_filter} Filter", **orbital_elements))
+            try:
+                plots.append(self.topocentric_hexplot(filters = [_filter], cache_data = cache_data, title = f"{_filter} Filter", **orbital_elements))
+            except:
+                print(f"Unable to add {_filter} filter to plots")
     
     def orbital_relations(   
         self,
@@ -777,15 +461,13 @@ class Detections():
 
         conditions = []
         
-        if start_time:
-            conditions.append(diasource.c['midpointtai'] >= start_time)
+        if self.start_time:
+            conditions.append(diasource.c['midpointtai'] >= self.start_time)
 
-        if end_time:
-            conditions.append(diasource.c['midpointtai'] <= end_time)
+        if self.end_time:
+            conditions.append(diasource.c['midpointtai'] <= self.end_time)
         
-        
-        
-        conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
+        orbital_elements, conditions = self.orbital_conditions(conditions = conditions, helio = False, **orbital_elements)
         
 
         if x == "a":
@@ -803,7 +485,7 @@ class Detections():
                 mpcorb.c['ssobjectid'], qx , qy, diasource.c['filter']).join(
                 mpcorb, diasource.c['ssobjectid'] == mpcorb.c['ssobjectid']
             ).where(
-                    *conditions
+                *conditions
             )
         )
 
@@ -842,7 +524,6 @@ class Detections():
         cache_data: Optional[bool] = False,
         **orbital_elements
     ):
-        
         
         return self.orbital_relations(
             x = x,
@@ -886,7 +567,6 @@ class Detections():
         **orbital_elements
     ):
         
-        
         return self.orbital_relations(
             x = x,
             y = y,
@@ -907,7 +587,6 @@ class Detections():
         cache_data: Optional[bool] = False,
         **orbital_elements
     ):
-        # slow - can cut the list
         if timeframe not in TIMEFRAME:
             raise Exception(f"Timeframe must be one of {TIMEFRAME}")
 
@@ -943,14 +622,6 @@ class Detections():
         
         hp.fig.autofmt_xdate()
 
-        '''
-        hp.ax.set_xlabel("Date")
-        hp.ax.set_ylabel("No. of Detections")
-
-        if time_format == "ISO":
-            hp.ax.set_xticks(ticks = bins, labels = [date[0:10] for date in format_times(bins, _format="ISO")])
-
-        '''  
         return hp
     
     
@@ -958,66 +629,12 @@ class Detections():
         self,
         DistanceMinMax=[[0,2],[2,6],[6,25],[25,100]]
 ):
-        KeepData = False
-        interval = int(self.end_time) - int(self.start_time)
-
-        dates = np.linspace(0, interval-1, interval)
-        counters = np.ndarray((len(dates)*len(DistanceMinMax),3))
-
-        ticks = np.ndarray.tolist(np.linspace(0, interval,interval+1))
-
-        count=0
-
-        for i,offset in enumerate(dates):
-            distances = []    
-
-            for MinMax in DistanceMinMax:
-                distances+=[[self.start_time+offset, self.start_time+offset+1, *MinMax,3]]
-
-            for j in range(len(distances)):
-                df = Queries(*distances[j])
-                
-                counters[count,:] = [offset+ self.start_time,df['count'].values[0],j]
-
-                count += 1
-
-        NewData =  pd.DataFrame(data=counters, columns=['Date','Detections','distance'])
-
-        legend = [str(distance[2])+'-'+str(distance[3])+' (au)' for i,distance in enumerate(distances)]
-
-        bp = BarPlot(data = NewData, x = "Date", y = "Detections", hue="distance", xlabel = "Date", ylabel = "Detection count")
+        return _daily_detection_distributions(
+            start_time = self.start_time,
+            end_time = self.end_time,
+            DistanceMinMax = DistanceMinMax
+        )
         
-        #bp.fig.set_size_inches(3*DateInterval,4)
-
-        bp.ax.legend(handles=bp.ax.legend_.legendHandles, labels=legend,loc='upper left', bbox_to_anchor=(1,1), borderpad = .2,)
-
-        xval = -0.5
-        numberofdistances=0
-        xvalcount = 0
-        for i,patch in enumerate(bp.ax.patches):
-            patch.set_width(1/len(distances))
-
-            patch.set_x(xval+numberofdistances)
-            xval+=1
-            
-            bp.ax.axvline(xval,color='black')
-            
-            xvalcount+=1
-
-            if xvalcount == interval:
-                xvalcount=0
-                xval=-0.5
-                numberofdistances+=1/len(distances)
-
-        bp.ax.set_xticks(ticks[:interval])
-
-        ProperDateLabels = [DateorMJD(MJD=date,ConvertToIso=False).to_value(format='iso',subfmt='date') for date in dates+self.start_time]
-
-        bp.ax.set_xticklabels(ProperDateLabels)
-
-        bp.ax.set(yscale="log")
-
-        return bp
     
     @staticmethod
     def population_detection_distributions(
@@ -1157,173 +774,11 @@ class Detections():
             )
             if pretty_format == [1, 4] or pretty_format == [4,1]:
                 pretty_plt.fig.set_figwidth(16)
-                #pretty_plt.fig.set_figheight(7)
             
             return pretty_plt
                              
         else:
             return plots
 
-from astropy.time import Time
-from sqlalchemy import text
-import seaborn as sns
-
-
-def monthly_detection_distribution(
-    date=60042,
-    day=None,
-    month=None,
-    year=None,
-    title='', 
-    filename=None,
-    DateInterval = 2,
-    DistanceMinMax=[[80, 81]],
-    LogY=True,
-    cache_data : Optional[bool] = True
-):
-
-    Months = ['January','February','March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
     
-    date = DateorMJD(MJD=date,Day=day,Month=month,Year=year,ConvertToIso=False).to_value(format='iso',subfmt='date').split('-')
-    
-    date[-1] = '01'
-
-    counters = np.ndarray((DateInterval*len(DistanceMinMax),3))
-
-    ticks = np.ndarray.tolist(np.linspace(0,DateInterval-1,DateInterval))
-    count=0
-    Dates = []
-    for i in range(0,DateInterval):
-        startdate =Time('-'.join(date)).to_value('mjd')
-        Dates+=[DateorMJD(MJD=startdate,ConvertToIso=False).to_value(format='iso',subfmt='date')]
-
-        if int(date[1]) ==12:
-            date[0] = str(int(date[0])+1); 
-            date[1] = '01'
-        else:
-            date[1] = str(int(date[1])+1)
-            if int(date[1]) <10:
-                date[1] = '0'+date[1]
-
-        enddate =Time('-'.join(date)).to_value('mjd')
-
-        distances = []
-        for MinMax in DistanceMinMax:
-            distances+=[[startdate+0.75, enddate+0.75, *MinMax,3]]
-        
-        for j in range(len(distances)):
-
-            df = Queries(*distances[j])
-
-            counters[count,:] = [startdate, df['count'].values[0],j]
-            count += 1
-    
-    Dates = [Months[int(date.split('-')[1])-1] + ', '+date.split('-')[0] for date in Dates]
-   
-    NewData =  pd.DataFrame(data=counters, columns=['Date','Detections','distance'])
-
-    
-    rows = (DateInterval // 6)
-    
-    bp = BarPlot(data=NewData,x='Date', y='Detections',hue='distance', cache_data = cache_data, title = title)
-
-    bp.ax.set_xticks(ticks)
-    bp.ax.set_xticklabels(Dates[0:7])
-    
-    legend = ["{:.2f}".format(round(distance[2],2))+'-'+"{:.2f}".format(round(distance[3],2))+' (au)' for i,distance in enumerate(distances)]
-    bp.ax.legend(handles=bp.ax.legend_.legendHandles, labels=legend,loc='upper left', bbox_to_anchor=(1,1), borderpad = 2,)
-
-    
-
-    if LogY:
-        bp.ax.set(yscale="log")
-    xval = -0.5
-    numberofdistances=0
-    xvalcount = 0
-    for g,patch in enumerate(bp.ax.patches):
-        patch.set_width(1/len(distances))
-        patch.set_x(xval+numberofdistances)
-        xval+=1
-        bp.ax.axvline(xval,color='black')
-        xvalcount+=1
-
-        limit = len(NewData)/len(NewData['distance'].unique())
-        if xvalcount== limit :
-            xvalcount=0
-            xval=-0.5
-            numberofdistances+=1/len(distances)
-    return bp
-    
-def yearly_detection_distribution(
-    date=None,
-    day=None,
-    month=None,
-    year=None,
-    title='', 
-    filename = None,
-    DateInterval = 8,
-    DistanceMinMax=[[80,81]],
-    LogY=True,
-    cache_data: Optional[bool] = True
-):
-    
-    with warnings.catch_warnings():
-        #dubious year warning
-        warnings.filterwarnings("ignore")
-        date = DateorMJD(MJD=date,Day=day,Month=month,Year=year,ConvertToIso=False).to_value(format='iso',subfmt='date').split('-')
-
-        counters = np.ndarray((DateInterval*len(DistanceMinMax),3))
-
-        ticks = np.ndarray.tolist(np.linspace(0,DateInterval-1,DateInterval))
-        count=0
-        Dates = []
-
-
-        for i in range(0,DateInterval):
-            startdate =Time('-'.join(date)).to_value('mjd')
-            Dates+=[DateorMJD(MJD=startdate,ConvertToIso=False).to_value(format='iso',subfmt='date')]
-
-            date[0] = str(int(date[0])+1)
-            enddate =Time('-'.join(date)).to_value('mjd')
-            distances = []
-            for MinMax in DistanceMinMax:
-                distances+=[[startdate+0.75, enddate+0.75, *MinMax,3]]
-            for j in range(len(distances)):
-                df = Queries(*distances[j])
-                counters[count,:] = [startdate,df['count'].values[0],j]
-                count += 1
-
-        Dates = [ '-'.join(date.split('-')[0:1]) for date in Dates]
-        NewData =  pd.DataFrame(data=counters, columns=['Date','Detections','distance'])
-
-        ticks = np.ndarray.tolist(np.linspace(0,DateInterval-1,DateInterval))
-        rows = (DateInterval // 4)
-        if DateInterval % 4 !=0 :
-            rows+=1
-
-        legend = ["{:.2f}".format(round(distance[2],2))+'-'+"{:.2f}".format(round(distance[3],2))+' (au)' for i,distance in enumerate(distances)]
-
-    bp = BarPlot(data = NewData, x=NewData['Date'],y=NewData['Detections'],hue=NewData['distance'], cache_data = cache_data, title = title)
-    
-    bp.ax.set_xticks(ticks)
-    bp.ax.set_xticklabels(Dates)
-    bp.ax.legend(handles=bp.ax.legend_.legendHandles, labels=legend,loc='upper left', bbox_to_anchor=(1,1), borderpad = 2,)
-
-    if LogY:
-        bp.ax.set(yscale="log")
-    xval = -0.5
-    numberofdistances=0
-    xvalcount = 0
-    for i,patch in enumerate(bp.ax.patches):
-        patch.set_width(1/len(distances))
-
-        patch.set_x(xval+numberofdistances)
-        xval+=1
-        bp.ax.axvline(xval,color='black')
-        xvalcount+=1
-        if xvalcount==len(NewData)/len(NewData['distance'].unique()):
-            xvalcount=0
-            xval=-0.5
-            numberofdistances+=1/len(distances)
-    return bp
