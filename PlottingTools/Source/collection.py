@@ -191,11 +191,9 @@ class Objects():
     
     def heliocentric_view(
         self,
-        
         filters: Optional[list] = None,
         title : Optional[str] = None,
         projection: Optional[Literal['2d', '3d']] = '2d',
-        
         library: Optional[str] =  "seaborn",
         cache_data: Optional[bool] = False,
         add_planets: Optional[bool] = False
@@ -207,9 +205,7 @@ class Objects():
         
         filters, _ = self.filter_conditions(filters = filters, conditions = [])
         
-        
-        # validate min_hd, max_hd
-        
+                
         #conditions = create_orbit_conditions(conditions = conditions, **orbital_elements)
         
         if projection:
@@ -289,7 +285,7 @@ class Objects():
         plots = []
 
         for _filter in filters:
-            plots.append(self.heliocentric_view(filters = [_filter], cache_data = cache_data, min_hd = min_hd, max_hd = max_hd, add_planets = add_planets))
+            plots.append(self.heliocentric_view(filters = [_filter], cache_data = cache_data, add_planets = add_planets))
         
         return plots
     
@@ -368,7 +364,6 @@ class Objects():
         add_planets: Optional[bool] = False
         
     ):
-        # validate min_hd, max_hd
         
         filters, _ = self.filter_conditions(filters = filters, conditions = [])
      
