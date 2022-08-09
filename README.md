@@ -9,4 +9,4 @@ Package for making useful visualizations of LSST/Rubin Observatory Solar System 
 This repo is in active development. A tutorial notebook is available under [PlottingTools/Tutorial/](https://github.com/QUB-Planet-Lab/LSST_Solar_System_Plotting_Tools/blob/main/PlottingTools/Tutorial/tutorial.ipynb). Please add feature requests or report bugs using the Issues tab.
 
 # Contributors
-Niall McElroy and Meg Schwamb
+Brian Rogers, Niall McElroy,  and Meg Schwamb
