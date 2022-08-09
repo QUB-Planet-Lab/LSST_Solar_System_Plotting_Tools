@@ -24,7 +24,6 @@ from plots.styles.filter_symbols import FILTER_SYMBOLS
 PLOT_TYPES = ['BOX', 'BOXEN', 'VIOLIN']
 ORB_PARAMS = ["eccentricity", "perihelion", "semi_major_axis", "inclination"]
 
-
 class Objects():
     def __init__(self,
                  start_time, 
