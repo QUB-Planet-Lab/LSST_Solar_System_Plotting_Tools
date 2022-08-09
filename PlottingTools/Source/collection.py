@@ -12,8 +12,6 @@ from observations import _detection_distributions
 from typing import Optional, Literal
 
 from sqlalchemy import select, func, distinct, column
-
-
 import warnings
 
 from matplotlib import patches
