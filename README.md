@@ -12,4 +12,4 @@ This repo is in active development. Tutorial notebooks are available under [Plot
 Brian Rogers, Niall McElroy,  and Meg Schwamb
 
 # Acknowledgements
-We thank the LSSTC Enabling Science Program for support. 
+We thank the LSSTC Enabling Science Program and the Queen's University Belfast Astrophysics Research Centre Summer Internship program for support. 
